@@ -1,0 +1,24 @@
+# Conexión a la base de datos
+pgcli postgres://ukubo:'kubo.W.3789K'@localhost:5432/kubo_db
+
+
+
+¿Cómo usar los datos en tus Handlers?
+Una vez que el Middleware (que definimos en el paso anterior) guarda los datos con c.Set,
+puedes recuperarlos en cualquier función de tus Handlers así:
+
+
+func (h *UsuarioHandler) Listar(c *gin.Context) {
+    // Recuperar el ID del usuario que hace la petición
+    userID, _ := c.Get("userID")
+    userRol, _ := c.Get("userRol")
+
+    // Ahora puedes usar userID para filtrar datos o userRol para denegar acceso
+    if userRol != "admin" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "No tienes permisos"})
+        return
+    }
+    
+    // ... resto de tu lógica
+}
+
