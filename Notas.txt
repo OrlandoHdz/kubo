@@ -1,5 +1,6 @@
-# Conexión a la base de datos
+# Conexión a la base de datos local
 pgcli postgres://ukubo:'kubo.W.3789K'@localhost:5432/kubo_db
+
 
 
 
@@ -24,5 +25,48 @@ func (h *UsuarioHandler) Listar(c *gin.Context) {
 
 
 # Conectarme al servidor de Alibaba Cloud
-
 ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
+
+
+# Conectar a postgresql Alibaba Cloud - Superusuario
+pgcli postgres://admin:'kw29zxu12001'@43.112.73.182:5432/postgres
+
+# Crear base de datos
+CREATE DATABASE kubo_db;    
+CREATE USER ukubo WITH PASSWORD 'kubo.W.3789K';
+GRANT ALL PRIVILEGES ON DATABASE kubo_db TO ukubo;
+GRANT ALL ON SCHEMA public TO ukubo;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO ukubo;
+
+pgcli postgres://ukubo:'kubo.W.3789K'@43.112.73.182:5432/kubo_db
+
+# Para subir a produccion el binario de kubo-api
+## Crear la imagen de Docker en mi Mac
+docker build --platform linux/amd64 -t kubo-api:v1 .
+
+## Emaaquetamos la imagen
+docker save -o kubo-api.tar kubo-api:v1
+
+## Probamos la imagen localmente
+docker run -p 8080:8080 kubo-api:v1
+
+## Subimos la imagen a Alibaba Cloud
+scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem kubo-api.tar ecs-user@43.112.73.182:/home/ecs-user/
+
+
+## Nos conectamos al servidor
+ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
+
+## Ejecutamos la imagen
+docker load -i kubo-api.tar
+docker run -d -p 8080:8080 kubo-api:v1
+
+
+## Probar la api
+curl --location 'http://43.112.73.182:8080/api/v1/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email": "orlando.hdz@gmail.com",
+    "password": "Tigres.2026"
+}
+'

@@ -1,4 +1,5 @@
 database:
-  url: "postgres://ukubo:'kubo.W.3789K'@localhost:5432/kubo_db?sslmode=disable"
+  # url: "postgres://ukubo:'kubo.W.3789K'@localhost:5432/kubo_db?sslmode=disable"
+  url: "postgres://ukubo:kubo.W.3789K@43.112.73.182:5432/kubo_db?sslmode=disable"
   max_conns: 10
   min_conns: 2

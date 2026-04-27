@@ -7,6 +7,7 @@ import (
 	"github.com/OrlandoHdz/kubo/internal/auth"
 	"github.com/OrlandoHdz/kubo/internal/database"
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -38,27 +39,27 @@ func main() {
 
 	log.Println("Admin creado: ", admin.ID)
 
-	// // 3. Crear Cliente Industrial (Prevención de Riesgo [cite: 27, 30])
-	// cliente, err := queries.CrearCliente(ctx, db.CrearClienteParams{
-	// 	NombreComercial: "Constructora Delta",
-	// 	RazonSocial:     "Delta S.A. de C.V.",
-	// 	Rfc:             "DEL010101ABC",
-	// 	Estado:          "Activo",
+	// 3. Crear Cliente Industrial (Prevención de Riesgo [cite: 27, 30])
+	cliente, err := queries.CrearCliente(ctx, db.CrearClienteParams{
+		NombreComercial: "Constructora Delta",
+		RazonSocial:     "Delta S.A. de C.V.",
+		Rfc:             "DEL010101ABC",
+		Estado:          "Activo",
 
-	// 	// Usamos la utilidad centralizada
-	// 	MontoMinimoCompra:     utils.ToNumeric(500.00),
-	// 	LineaCreditoTotal:     utils.ToNumeric(100000),
-	// 	LineaCreditoUtilizada: utils.ToNumeric(0),
-	// 	DiasCredito:           30,
-	// 	PermitirPagoCredito:   true,
-	// 	MetodoPagoPreferente:  "Transferencia",
+		// Usamos la utilidad centralizada
+		MontoMinimoCompra:     utils.ToNumeric(500.00),
+		LineaCreditoTotal:     utils.ToNumeric(100000),
+		LineaCreditoUtilizada: utils.ToNumeric(0),
+		DiasCredito:           30,
+		PermitirPagoCredito:   true,
+		MetodoPagoPreferente:  "Transferencia",
 
-	// 	CreatedBy: pgtype.Int4{Int32: admin.ID, Valid: true},
-	// })
+		CreatedBy: pgtype.Int4{Int32: admin.ID, Valid: true},
+	})
 
-	// if err != nil {
-	// 	log.Fatalf("Error en seed: %v", err)
-	// }
+	if err != nil {
+		log.Fatalf("Error en seed: %v", err)
+	}
 
-	// log.Printf("Seed completado. Cliente %s creado por admin %d", cliente.NombreComercial, admin.ID)
+	log.Printf("Seed completado. Cliente %s creado por admin %d", cliente.NombreComercial, admin.ID)
 }
