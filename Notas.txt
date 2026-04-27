@@ -22,3 +22,7 @@ func (h *UsuarioHandler) Listar(c *gin.Context) {
     // ... resto de tu lógica
 }
 
+
+# Conectarme al servidor de Alibaba Cloud
+
+ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
