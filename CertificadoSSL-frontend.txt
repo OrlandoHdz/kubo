@@ -1,0 +1,116 @@
+Documentación: Automatización de SSL (Let's Encrypt) en Alibaba Cloud OSS
+Objetivo: Generar y renovar automáticamente certificados SSL gratuitos de Let's Encrypt (curva elíptica/ECC) para un dominio personalizado en un bucket de OSS de Alibaba Cloud, utilizando un servidor ECS (Linux) como orquestador.
+
+Recursos utilizados en este ejemplo:
+
+Dominio: pruebas-arsenal.almacendigital.work
+
+Bucket OSS: kubo-frontend
+
+Región OSS: us-east-1 (Virginia)
+
+Herramientas: acme.sh, ossutil, API de Aliyun DNS.
+
+Requisitos Previos (Alibaba Cloud RAM)
+Antes de ejecutar los scripts, se debe crear un usuario programático (OpenAPI Access) en la consola de Resource Access Management (RAM) de Alibaba Cloud y asignarle estrictamente las siguientes tres políticas del sistema:
+
+AliyunDNSFullAccess (Para que acme.sh cree el registro TXT de validación de Let's Encrypt).
+
+AliyunOSSFullAccess (Para que ossutil pueda vincular el certificado al bucket).
+
+AliyunYundunCertFullAccess o AliyunCASFullAccess (Para registrar el certificado en el servicio central de seguridad de Alibaba).
+
+Se deben guardar el AccessKey ID y el AccessKey Secret generados.
+
+Paso 1: Preparar el entorno del servidor ECS
+Se deben instalar las herramientas necesarias en el servidor que orquestará la renovación (conectado por SSH con el usuario ecs-user).
+
+1. Instalar descompresor (si no existe):
+
+Bash
+sudo yum install unzip -y   # Para Aliyun Linux / CentOS / RHEL
+# o
+sudo apt update && sudo apt install unzip -y  # Para Ubuntu / Debian
+2. Instalar ossutil (Herramienta oficial de Alibaba OSS):
+
+Bash
+sudo -v ; curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+3. Instalar acme.sh:
+
+Bash
+curl https://get.acme.sh | sh -s email=tu_correo@ejemplo.com
+source ~/.bashrc
+Paso 2: Emitir el Certificado Inicial
+Exportar las credenciales temporales en la terminal para que acme.sh pueda verificar el dominio a través de los DNS de Alibaba:
+
+Bash
+export Ali_Key="TU_ACCESS_KEY_ID"
+export Ali_Secret="TU_ACCESS_KEY_SECRET"
+Generar el certificado forzando Let's Encrypt (Validación DNS automática):
+
+Bash
+acme.sh --issue --dns dns_ali -d pruebas-arsenal.almacendigital.work -d *.pruebas-arsenal.almacendigital.work --server letsencrypt
+Paso 3: Crear el Script de Despliegue (deploy_oss.sh)
+Crear la carpeta donde vivirán los certificados limpios y el script de carga.
+
+Bash
+mkdir -p /home/ecs-user/certificados
+nano /home/ecs-user/deploy_oss.sh
+Contenido del archivo deploy_oss.sh:
+(Este script genera el archivo XML requerido por la API de OSS y sube los certificados)
+
+Bash
+#!/bin/bash
+
+# --- CONFIGURACIÓN ---
+DOMAIN="pruebas-arsenal.almacendigital.work"
+BUCKET="kubo-frontend"
+ENDPOINT="oss-us-east-1.aliyuncs.com" 
+ACCESS_KEY="TU_ACCESS_KEY_ID_AQUI"
+SECRET_KEY="TU_ACCESS_KEY_SECRET_AQUI"
+
+CERT_PATH="/home/ecs-user/certificados/cert.pem"
+KEY_PATH="/home/ecs-user/certificados/key.pem"
+XML_PATH="/home/ecs-user/certificados/cname.xml"
+
+# --- 1. GENERAR EL ARCHIVO XML REQUERIDO POR ALIBABA ---
+cat <<EOF > $XML_PATH
+<?xml version="1.0" encoding="UTF-8"?>
+<BucketCnameConfiguration>
+  <Cname>
+    <Domain>$DOMAIN</Domain>
+    <CertificateConfiguration>
+      <Certificate>
+$(cat $CERT_PATH)
+      </Certificate>
+      <PrivateKey>
+$(cat $KEY_PATH)
+      </PrivateKey>
+      <Force>true</Force>
+    </CertificateConfiguration>
+  </Cname>
+</BucketCnameConfiguration>
+EOF
+
+# --- 2. SUBIR LA CONFIGURACIÓN USANDO OSSUTIL ---
+/usr/bin/ossutil bucket-cname --method put --item certificate oss://$BUCKET $XML_PATH -e $ENDPOINT -i $ACCESS_KEY -k $SECRET_KEY
+Dar permisos de ejecución al script:
+
+Bash
+chmod +x /home/ecs-user/deploy_oss.sh
+Paso 4: Vincular la Automatización (Instalar y Recargar)
+El último paso es indicarle a acme.sh cómo extraer los certificados finales en formato .pem y qué script ejecutar de forma automática cada vez que se renueven (cada ~60 días).
+
+Como el certificado generado es de curva elíptica, se requiere la bandera --ecc:
+
+Bash
+acme.sh --install-cert -d pruebas-arsenal.almacendigital.work --ecc \
+--key-file       /home/ecs-user/certificados/key.pem  \
+--fullchain-file /home/ecs-user/certificados/cert.pem \
+--reloadcmd     "/home/ecs-user/deploy_oss.sh"
+Comportamiento Esperado
+Al ejecutar el Paso 4, la terminal mostrará la extracción de las llaves y ejecutará el reloadcmd.
+
+El script deploy_oss.sh imprimirá el tiempo transcurrido (ej. 2.594658(s) elapsed), indicando éxito.
+
+Mantenimiento: Cero. El servidor ECS cuenta ahora con un cron job administrado por acme.sh que realizará este ciclo en segundo plano de manera perpetua.

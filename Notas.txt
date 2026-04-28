@@ -40,7 +40,8 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO ukubo;
 
 pgcli postgres://ukubo:'kubo.W.3789K'@43.112.73.182:5432/kubo_db
 
-# Para subir a produccion el binario de kubo-api
+###############################
+# Para subir a produccion el binario de kubo-api, estos comandos se tienen que correr en la carpeta de la aplicacion donde esta el Dockerfile
 ## Crear la imagen de Docker en mi Mac
 docker build --platform linux/amd64 -t kubo-api:v1 .
 
@@ -70,3 +71,13 @@ curl --location 'http://43.112.73.182:8080/api/v1/login' \
     "password": "Tigres.2026"
 }
 '
+
+## Solo pasar el archivo docker-compose.yml es para crear la base de datos
+scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem docker-compose.yml ecs-user@43.112.73.182:/home/ecs-user/app/kubo
+
+## Crear la base de datos
+docker-compose -f docker-compose.yml up -d
+
+
+
+

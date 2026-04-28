@@ -1,0 +1,85 @@
+Documentación: Proxy Inverso con Nginx para Backend en Docker (HTTPS)
+Objetivo: Eliminar el error de "Contenido Mixto" (Mixed Content) protegiendo la API del backend (que corre en un contenedor Docker en el puerto 8080) con el certificado SSL comodín previamente generado, para que se comunique de forma segura con el frontend.
+
+Recursos utilizados:
+
+Subdominio API: api.pruebas-arsenal.almacendigital.work
+
+IP del Servidor (ECS): 43.112.73.182
+
+Puerto interno Docker: 8080
+
+Ruta de Certificados: /home/ecs-user/certificados/
+
+Paso 1: Configuración en Alibaba Cloud (Consola)
+DNS: En el panel de gestión de dominios, crear un registro tipo A.
+
+Host/Nombre: api.pruebas-arsenal
+
+Valor: 43.112.73.182
+
+Firewall (Security Group): Entrar a la configuración del servidor ECS y asegurarse de que las reglas de entrada (Inbound Rules) tengan abiertos los puertos 80 (HTTP) y 443 (HTTPS) para todo público (0.0.0.0/0).
+
+Paso 2: Instalación de Nginx en ECS
+Conectarse al servidor vía SSH y ejecutar la instalación del servidor web que funcionará como puente (Proxy Inverso).
+
+Para Aliyun Linux / CentOS:
+
+Bash
+sudo yum install nginx -y
+Para Ubuntu / Debian:
+
+Bash
+sudo apt update && sudo apt install nginx -y
+Paso 3: Configuración del Proxy Inverso
+Crear el archivo de configuración específico para la API.
+
+Bash
+sudo nano /etc/nginx/conf.d/api.conf
+Pegar la siguiente configuración, la cual fuerza el uso de HTTPS y enruta el tráfico seguro hacia el contenedor de Docker:
+
+Nginx
+# 1. Redirección forzada de HTTP a HTTPS
+server {
+    listen 80;
+    server_name api.pruebas-arsenal.almacendigital.work;
+    return 301 https://$host$request_uri;
+}
+
+# 2. Configuración del servidor seguro (HTTPS)
+server {
+    listen 443 ssl;
+    server_name api.pruebas-arsenal.almacendigital.work;
+
+    # Rutas a los certificados gestionados por acme.sh
+    ssl_certificate /home/ecs-user/certificados/cert.pem;
+    ssl_certificate_key /home/ecs-user/certificados/key.pem;
+
+    # Enrutamiento al contenedor Docker
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        
+        # Cabeceras para conservar la IP real del cliente
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+(Guardar y cerrar el archivo).
+
+Paso 4: Validar y Reiniciar Nginx
+Verificar que la sintaxis del archivo sea correcta y reiniciar el servicio para aplicar los cambios.
+
+Bash
+sudo nginx -t
+sudo systemctl enable nginx
+sudo systemctl restart nginx
+Paso 5: Actualización del Frontend (Código Local)
+En el código fuente del proyecto (Vue/React/Angular), buscar el archivo de entorno o de configuración de llamadas a la API (Axios, Fetch, etc.) y reemplazar la URL base.
+
+Reemplazar esto: http://43.112.73.182:8080/api/v1
+
+Por esto: https://api.pruebas-arsenal.almacendigital.work/api/v1
+
+Finalmente, recompilar el proyecto (npm run build) y subir los nuevos archivos estáticos al bucket de Alibaba OSS.
