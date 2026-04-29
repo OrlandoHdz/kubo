@@ -94,6 +94,34 @@ type ProductosVariante struct {
 	DeletedBy    pgtype.Int4      `json:"deleted_by"`
 }
 
+type SolicitudRegistroNuevoCliente struct {
+	ID                int32            `json:"id"`
+	NombreComercial   string           `json:"nombre_comercial"`
+	RazonSocial       string           `json:"razon_social"`
+	Rfc               string           `json:"rfc"`
+	TipoContribuyente string           `json:"tipo_contribuyente"`
+	SolicitudEstado   string           `json:"solicitud_estado"`
+	Observacion       pgtype.Text      `json:"observacion"`
+	Comentarios       pgtype.Text      `json:"comentarios"`
+	ConstanciaSatUrl  pgtype.Text      `json:"constancia_sat_url"`
+	Calle             string           `json:"calle"`
+	Numero            string           `json:"numero"`
+	Colonia           string           `json:"colonia"`
+	Ciudad            string           `json:"ciudad"`
+	Estado            string           `json:"estado"`
+	Cp                string           `json:"cp"`
+	NombreContacto    string           `json:"nombre_contacto"`
+	PuestoContacto    string           `json:"puesto_contacto"`
+	CorreoContacto    string           `json:"correo_contacto"`
+	TelefonoContacto  string           `json:"telefono_contacto"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
+	DeletedAt         pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy         pgtype.Int4      `json:"created_by"`
+	UpdatedBy         pgtype.Int4      `json:"updated_by"`
+	DeletedBy         pgtype.Int4      `json:"deleted_by"`
+}
+
 type Usuario struct {
 	ID           int32            `json:"id"`
 	ClienteID    pgtype.Int4      `json:"cliente_id"`

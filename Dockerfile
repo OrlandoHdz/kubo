@@ -25,8 +25,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubo-api ./cmd/ap
 # Usamos 'alpine' que pesa solo ~5MB. (También podrías usar 'scratch' que pesa 0MB)
 FROM alpine:latest
 
-# Añadimos certificados raíz y zonas horarias (Súper importante si tu API hace peticiones HTTPS a otros servicios)
-RUN apk --no-cache add ca-certificates tzdata
+# Añadimos certificados raíz, zonas horarias y poppler-utils para el parseo de PDF
+RUN apk --no-cache add ca-certificates tzdata poppler-utils
 
 WORKDIR /app
 
