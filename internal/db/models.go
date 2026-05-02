@@ -28,6 +28,31 @@ type Cliente struct {
 	DeletedBy             pgtype.Int4      `json:"deleted_by"`
 }
 
+type ClientesIntegracion struct {
+	ID        int32          `json:"id"`
+	CveCte    pgtype.Int4    `json:"cve_cte"`
+	NomCte    pgtype.Text    `json:"nom_cte"`
+	DirCte    pgtype.Text    `json:"dir_cte"`
+	ColCte    pgtype.Text    `json:"col_cte"`
+	CdCte     pgtype.Text    `json:"cd_cte"`
+	EdoCte    pgtype.Text    `json:"edo_cte"`
+	RfcCte    pgtype.Text    `json:"rfc_cte"`
+	CpCte     pgtype.Text    `json:"cp_cte"`
+	Contacto  pgtype.Text    `json:"contacto"`
+	Tel1Cte   pgtype.Text    `json:"tel1_cte"`
+	LimCre    pgtype.Numeric `json:"lim_cre"`
+	DiaCre    pgtype.Int4    `json:"dia_cre"`
+	CveAge    pgtype.Int4    `json:"cve_age"`
+	LadaCte   pgtype.Text    `json:"lada_cte"`
+	CveZon    pgtype.Int4    `json:"cve_zon"`
+	CveSub    pgtype.Int4    `json:"cve_sub"`
+	CveCan    pgtype.Int4    `json:"cve_can"`
+	Cuentacon pgtype.Text    `json:"cuentacon"`
+	Contado   pgtype.Int4    `json:"contado"`
+	PaisCte   pgtype.Text    `json:"pais_cte"`
+	EmailCte  pgtype.Text    `json:"email_cte"`
+}
+
 type Pedido struct {
 	ID          int32            `json:"id"`
 	Folio       string           `json:"folio"`

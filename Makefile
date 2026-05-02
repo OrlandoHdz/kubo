@@ -2,12 +2,13 @@
 MAIN_PACKAGE=cmd/api/main.go
 SEED_PACKAGE=cmd/seed/main.go
 DB_TEST_PACKAGE=cmd/setup_db/main.go
+WORKER_PACKAGE=cmd/worker/main.go
 
 # Colores para la terminal (opcional pero profesional)
 YELLOW=\033[0;33m
 NC=\033[0m
 
-.PHONY: run seed test-db help
+.PHONY: run seed test-db help sync-clients sqlc
 
 ## help: Muestra los comandos disponibles
 help:
@@ -33,4 +34,9 @@ test-db:
 sqlc:
 	@echo "${YELLOW}Generando código de sqlc...${NC}"
 	sqlc generate
+
+## sync-clients: Sincronizar clientes desde el ERP SAI (DBF)
+sync-clients:
+	@echo "${YELLOW}Sincronizando clientes desde SAI ERP...${NC}"
+	go run $(WORKER_PACKAGE)
 	

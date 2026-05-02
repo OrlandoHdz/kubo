@@ -664,6 +664,58 @@ func (q *Queries) ListarSolicitudesPendientes(ctx context.Context) ([]SolicitudR
 	return items, nil
 }
 
+const listarTodasLasSolicitudes = `-- name: ListarTodasLasSolicitudes :many
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListarTodasLasSolicitudes(ctx context.Context) ([]SolicitudRegistroNuevoCliente, error) {
+	rows, err := q.db.Query(ctx, listarTodasLasSolicitudes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SolicitudRegistroNuevoCliente
+	for rows.Next() {
+		var i SolicitudRegistroNuevoCliente
+		if err := rows.Scan(
+			&i.ID,
+			&i.NombreComercial,
+			&i.RazonSocial,
+			&i.Rfc,
+			&i.TipoContribuyente,
+			&i.SolicitudEstado,
+			&i.Observacion,
+			&i.Comentarios,
+			&i.ConstanciaSatUrl,
+			&i.Calle,
+			&i.Numero,
+			&i.Colonia,
+			&i.Ciudad,
+			&i.Estado,
+			&i.Cp,
+			&i.NombreContacto,
+			&i.PuestoContacto,
+			&i.CorreoContacto,
+			&i.TelefonoContacto,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.CreatedBy,
+			&i.UpdatedBy,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const obtenerSolicitudByID = `-- name: ObtenerSolicitudByID :one
 SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
 WHERE id = $1 AND deleted_at IS NULL

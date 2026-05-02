@@ -25,6 +25,11 @@ SELECT * FROM solicitud_registro_nuevo_cliente
 WHERE solicitud_estado = 'Pendiente' AND deleted_at IS NULL
 ORDER BY created_at DESC;
 
+-- name: ListarTodasLasSolicitudes :many
+SELECT * FROM solicitud_registro_nuevo_cliente
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC;
+
 -- name: ObtenerSolicitudByID :one
 SELECT * FROM solicitud_registro_nuevo_cliente
 WHERE id = $1 AND deleted_at IS NULL;

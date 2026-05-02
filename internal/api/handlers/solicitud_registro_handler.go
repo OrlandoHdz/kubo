@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,10 +28,10 @@ func NewSolicitudRegistroHandler(q *db.Queries) *SolicitudRegistroHandler {
 
 func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
 	// 1. Obtener los campos del formulario (multipart/form-data)
-	nombreComercial := c.PostForm("nombre_comercial")
-	razonSocial := c.PostForm("razon_social")
+	nombreComercial := c.PostForm("nombreComercial")
+	razonSocial := c.PostForm("razonSocial")
 	rfc := c.PostForm("rfc")
-	tipoContribuyente := c.PostForm("tipo_contribuyente")
+	tipoContribuyente := c.PostForm("tipoContribuyente")
 	calle := c.PostForm("calle")
 	numero := c.PostForm("numero")
 	colonia := c.PostForm("colonia")
@@ -177,6 +178,7 @@ func (h *SolicitudRegistroHandler) ParseCSF(c *gin.Context) {
 
 	rfc := extract(`(?i)RFC:\s*([A-Z0-9]+)`)
 	razonSocial := extract(`(?i)Denominación/Razón\s*Social:\s*(.*?)(?:\s{2,}|$)`)
+	nombreComercial := extract(`(?i)Nombre\s*Comercial:\s*(.*?)(?:\s{2,}|$)`)
 	codigoPostal := extract(`(?i)Código\s*Postal:\s*(\d{5})`)
 	nombreVialidad := extract(`(?i)Nombre\s*de\s*Vialidad:\s*(.*?)(?:\s{2,}|$)`)
 	numeroExterior := extract(`(?i)Número\s*Exterior:\s*(.*?)(?:\s{2,}|$)`)
@@ -188,6 +190,7 @@ func (h *SolicitudRegistroHandler) ParseCSF(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"rfc":                rfc,
 		"razon_social":       razonSocial,
+		"nombre_comercial":   nombreComercial,
 		"codigo_postal":      codigoPostal,
 		"vialidad":           nombreVialidad,
 		"numero_exterior":    numeroExterior,
@@ -196,4 +199,63 @@ func (h *SolicitudRegistroHandler) ParseCSF(c *gin.Context) {
 		"municipio":          nombreMunicipio,
 		"entidad_federativa": nombreEntidad,
 	})
+}
+
+// Listar devuelve todas las solicitudes de registro no borradas
+func (h *SolicitudRegistroHandler) Listar(c *gin.Context) {
+	solicitudes, err := h.queries.ListarTodasLasSolicitudes(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al listar solicitudes: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, solicitudes)
+}
+
+// ActualizarEstado actualiza el estado de una solicitud
+func (h *SolicitudRegistroHandler) ActualizarEstado(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	var req struct {
+		Estado      string `json:"solicitud_estado"`
+		Observacion string `json:"observacion"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
+		return
+	}
+
+	if req.Estado == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El estado es requerido"})
+		return
+	}
+
+	pgObservacion := pgtype.Text{Valid: false}
+	if req.Observacion != "" {
+		pgObservacion = pgtype.Text{String: req.Observacion, Valid: true}
+	}
+
+	// Por ahora el updated_by lo dejamos como null o un valor fijo si no tenemos el usuario del context
+	// Si el middleware de auth está activado, podríamos sacar el ID del usuario de ahí.
+	// Por ahora lo dejamos como nulo (Valid: false)
+	updatedBy := pgtype.Int4{Valid: false}
+
+	err = h.queries.ActualizarSolicitudEstado(c.Request.Context(), db.ActualizarSolicitudEstadoParams{
+		ID:              int32(id),
+		SolicitudEstado: req.Estado,
+		Observacion:     pgObservacion,
+		UpdatedBy:       updatedBy,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Estado actualizado correctamente"})
 }
