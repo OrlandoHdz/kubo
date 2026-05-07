@@ -16,6 +16,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries) {
 	// Servir archivos subidos estáticamente (ej. para que la URL /uploads/... devuelva el PDF)
 	r.Static("/uploads", "./uploads")
 
+	clientesHandler := handlers.NewClientesHandler(queries)
+
 	v1 := r.Group("/api/v1")
 	{
 		// 1. Rutas totalmente públicas
@@ -23,34 +25,43 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries) {
 		v1.POST("/solicitud-registro", solicitudHandler.Crear)
 		v1.POST("/parse-csf", solicitudHandler.ParseCSF)
 
-		// Rutas protegidas de solicitudes (Admin)
+		// 2. Rutas protegidas
+		v1.Use(auth.AuthMiddleware())
+
+		// Solicitudes (Admin)
 		solicitudes := v1.Group("/solicitud-registro")
-		solicitudes.Use(auth.AuthMiddleware())
 		{
 			solicitudes.GET("", solicitudHandler.Listar)
 			solicitudes.PATCH("/:id/estado", solicitudHandler.ActualizarEstado)
 		}
 
-		// 2. Definimos el grupo de usuarios
+		// Usuarios
 		usuarios := v1.Group("/usuarios")
-
-		// 3. APLICAMOS el middleware directamente a este grupo
-		// Todo lo que esté debajo de 'usuarios' pasará por aquí
-		usuarios.Use(auth.AuthMiddleware())
 		{
 			usuarios.POST("/", userHandler.Crear)
 			usuarios.GET("/", userHandler.Listar)
-			// Aquí irán los futuros usuarios.GET("/:id", ...)
+			usuarios.PATCH("/:id/status", userHandler.ActualizarEstado)
+			usuarios.PATCH("/:id/password", userHandler.CambiarPassword)
 		}
 
-		// 4. Rutas de Clientes Integración
+		// Clientes Integración
 		clientesIntegracion := v1.Group("/clientes-integracion")
-		clientesIntegracion.Use(auth.AuthMiddleware())
 		{
 			clientesIntegracion.GET("", clientesIntegracionHandler.Listar)
 			clientesIntegracion.GET("/:id", clientesIntegracionHandler.Obtener)
 			clientesIntegracion.GET("/cve/:cve", clientesIntegracionHandler.ObtenerPorCveCte)
 			clientesIntegracion.POST("/", clientesIntegracionHandler.Crear)
+		}
+
+		// Clientes (Sistema Local)
+		clientes := v1.Group("/clientes")
+		{
+			clientes.GET("", clientesHandler.Listar)
+			clientes.GET("/:id", clientesHandler.Obtener)
+			clientes.POST("/", clientesHandler.Crear)
+			clientes.PUT("/:id", clientesHandler.Actualizar)
+			clientes.DELETE("/:id", clientesHandler.Eliminar)
+			clientes.PATCH("/:id/saldo", clientesHandler.ActualizarSaldo)
 		}
 	}
 }

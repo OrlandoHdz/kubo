@@ -50,7 +50,7 @@ UPDATE usuarios
 SET 
     password_hash = $2,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $1
+    updated_by = $3
 WHERE id = $1;
 
 -- name: SoftDeleteUsuario :exec
@@ -61,3 +61,14 @@ SET
     deleted_by = $2,
     is_active = FALSE
 WHERE id = $1;
+
+-- name: ListarUsuariosConCliente :many
+-- Lista usuarios junto con el nombre y razón social del cliente asociado
+SELECT 
+    u.id, u.cliente_id, u.email, u.rol, u.is_active, u.created_at,
+    c.nombre_comercial as cliente_nombre,
+    c.razon_social as cliente_razon_social
+FROM usuarios u
+LEFT JOIN clientes c ON u.cliente_id = c.id
+WHERE u.deleted_at IS NULL
+ORDER BY u.created_at DESC;

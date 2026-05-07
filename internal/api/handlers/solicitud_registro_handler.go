@@ -35,13 +35,13 @@ func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
 	calle := c.PostForm("calle")
 	numero := c.PostForm("numero")
 	colonia := c.PostForm("colonia")
-	ciudad := c.PostForm("ciudad")
+	ciudad := c.PostForm("municipio")
 	estado := c.PostForm("estado")
 	cp := c.PostForm("cp")
-	nombreContacto := c.PostForm("nombre_contacto")
-	puestoContacto := c.PostForm("puesto_contacto")
-	correoContacto := c.PostForm("correo_contacto")
-	telefonoContacto := c.PostForm("telefono_contacto")
+	nombreContacto := c.PostForm("nombreContacto")
+	puestoContacto := c.PostForm("puestoContacto")
+	correoContacto := c.PostForm("email")
+	telefonoContacto := c.PostForm("phone")
 	comentarios := c.PostForm("comentarios")
 
 	// Validaciones básicas requeridas

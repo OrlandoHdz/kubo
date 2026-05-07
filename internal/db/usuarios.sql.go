@@ -16,18 +16,19 @@ UPDATE usuarios
 SET 
     password_hash = $2,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $1
+    updated_by = $3
 WHERE id = $1
 `
 
 type ActualizarPasswordParams struct {
-	UpdatedBy    pgtype.Int4 `json:"updated_by"`
+	ID           int32       `json:"id"`
 	PasswordHash string      `json:"password_hash"`
+	UpdatedBy    pgtype.Int4 `json:"updated_by"`
 }
 
 // Query específica para cambio de contraseña por seguridad
 func (q *Queries) ActualizarPassword(ctx context.Context, arg ActualizarPasswordParams) error {
-	_, err := q.db.Exec(ctx, actualizarPassword, arg.UpdatedBy, arg.PasswordHash)
+	_, err := q.db.Exec(ctx, actualizarPassword, arg.ID, arg.PasswordHash, arg.UpdatedBy)
 	return err
 }
 
@@ -209,6 +210,58 @@ func (q *Queries) ListarUsuarios(ctx context.Context) ([]Usuario, error) {
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarUsuariosConCliente = `-- name: ListarUsuariosConCliente :many
+SELECT 
+    u.id, u.cliente_id, u.email, u.rol, u.is_active, u.created_at,
+    c.nombre_comercial as cliente_nombre,
+    c.razon_social as cliente_razon_social
+FROM usuarios u
+LEFT JOIN clientes c ON u.cliente_id = c.id
+WHERE u.deleted_at IS NULL
+ORDER BY u.created_at DESC
+`
+
+type ListarUsuariosConClienteRow struct {
+	ID                 int32            `json:"id"`
+	ClienteID          pgtype.Int4      `json:"cliente_id"`
+	Email              string           `json:"email"`
+	Rol                string           `json:"rol"`
+	IsActive           pgtype.Bool      `json:"is_active"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	ClienteNombre      pgtype.Text      `json:"cliente_nombre"`
+	ClienteRazonSocial pgtype.Text      `json:"cliente_razon_social"`
+}
+
+// Lista usuarios junto con el nombre y razón social del cliente asociado
+func (q *Queries) ListarUsuariosConCliente(ctx context.Context) ([]ListarUsuariosConClienteRow, error) {
+	rows, err := q.db.Query(ctx, listarUsuariosConCliente)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListarUsuariosConClienteRow
+	for rows.Next() {
+		var i ListarUsuariosConClienteRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClienteID,
+			&i.Email,
+			&i.Rol,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.ClienteNombre,
+			&i.ClienteRazonSocial,
 		); err != nil {
 			return nil, err
 		}
