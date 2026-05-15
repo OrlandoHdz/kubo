@@ -25,6 +25,7 @@ CREATE TABLE productos_variantes (
     stock_actual INTEGER NOT NULL DEFAULT 0, -- [cite: 159]
     unidad_medida TEXT NOT NULL DEFAULT 'Pza', -- [cite: 261]
     lead_time_dias INTEGER DEFAULT 2, -- [cite: 162]
+    especificaciones TEXT,
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

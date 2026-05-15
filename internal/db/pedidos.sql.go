@@ -11,13 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const actualizarEstadoPedido = `-- name: ActualizarEstadoPedido :exec
+const actualizarEstadoPedido = `-- name: ActualizarEstadoPedido :one
 UPDATE pedidos
 SET 
     estado = $2,
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type ActualizarEstadoPedidoParams struct {
@@ -26,41 +27,32 @@ type ActualizarEstadoPedidoParams struct {
 	UpdatedBy pgtype.Int4 `json:"updated_by"`
 }
 
-// Controla el workflow: Pendiente -> Picking -> Tránsito -> Entregado (cite: 248)
-func (q *Queries) ActualizarEstadoPedido(ctx context.Context, arg ActualizarEstadoPedidoParams) error {
-	_, err := q.db.Exec(ctx, actualizarEstadoPedido, arg.ID, arg.Estado, arg.UpdatedBy)
-	return err
-}
-
-const actualizarPartidaPedido = `-- name: ActualizarPartidaPedido :exec
-UPDATE pedido_detalles
-SET 
-    cantidad = $2,
-    precio_unitario_aplicado = $3,
-    updated_at = CURRENT_TIMESTAMP,
-    updated_by = $4
-WHERE id = $1
-`
-
-type ActualizarPartidaPedidoParams struct {
-	ID                     int32          `json:"id"`
-	Cantidad               int32          `json:"cantidad"`
-	PrecioUnitarioAplicado pgtype.Numeric `json:"precio_unitario_aplicado"`
-	UpdatedBy              pgtype.Int4    `json:"updated_by"`
-}
-
-func (q *Queries) ActualizarPartidaPedido(ctx context.Context, arg ActualizarPartidaPedidoParams) error {
-	_, err := q.db.Exec(ctx, actualizarPartidaPedido,
-		arg.ID,
-		arg.Cantidad,
-		arg.PrecioUnitarioAplicado,
-		arg.UpdatedBy,
+func (q *Queries) ActualizarEstadoPedido(ctx context.Context, arg ActualizarEstadoPedidoParams) (Pedido, error) {
+	row := q.db.QueryRow(ctx, actualizarEstadoPedido, arg.ID, arg.Estado, arg.UpdatedBy)
+	var i Pedido
+	err := row.Scan(
+		&i.ID,
+		&i.Folio,
+		&i.ClienteID,
+		&i.UsuarioID,
+		&i.Estado,
+		&i.MetodoPago,
+		&i.Subtotal,
+		&i.Iva,
+		&i.TotalOrden,
+		&i.EsBackorder,
+		&i.FechaPedido,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
 	)
-	return err
+	return i, err
 }
 
 const crearPedido = `-- name: CrearPedido :one
-
 INSERT INTO pedidos (
     folio, 
     cliente_id, 
@@ -71,29 +63,25 @@ INSERT INTO pedidos (
     iva, 
     total_orden, 
     es_backorder, 
-    fecha_pedido,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 ) RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type CrearPedidoParams struct {
-	Folio       string           `json:"folio"`
-	ClienteID   pgtype.Int4      `json:"cliente_id"`
-	UsuarioID   pgtype.Int4      `json:"usuario_id"`
-	Estado      string           `json:"estado"`
-	MetodoPago  string           `json:"metodo_pago"`
-	Subtotal    pgtype.Numeric   `json:"subtotal"`
-	Iva         pgtype.Numeric   `json:"iva"`
-	TotalOrden  pgtype.Numeric   `json:"total_orden"`
-	EsBackorder pgtype.Bool      `json:"es_backorder"`
-	FechaPedido pgtype.Timestamp `json:"fecha_pedido"`
-	CreatedBy   pgtype.Int4      `json:"created_by"`
+	Folio       string         `json:"folio"`
+	ClienteID   pgtype.Int4    `json:"cliente_id"`
+	UsuarioID   pgtype.Int4    `json:"usuario_id"`
+	Estado      string         `json:"estado"`
+	MetodoPago  string         `json:"metodo_pago"`
+	Subtotal    pgtype.Numeric `json:"subtotal"`
+	Iva         pgtype.Numeric `json:"iva"`
+	TotalOrden  pgtype.Numeric `json:"total_orden"`
+	EsBackorder pgtype.Bool    `json:"es_backorder"`
+	CreatedBy   pgtype.Int4    `json:"created_by"`
 }
 
-// internal/sql/pedidos.sql
-// Inicia el flujo de venta y reserva de crédito (cite: 234, 274)
 func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedido, error) {
 	row := q.db.QueryRow(ctx, crearPedido,
 		arg.Folio,
@@ -105,7 +93,6 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 		arg.Iva,
 		arg.TotalOrden,
 		arg.EsBackorder,
-		arg.FechaPedido,
 		arg.CreatedBy,
 	)
 	var i Pedido
@@ -131,12 +118,73 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 	return i, err
 }
 
+const crearPedidoDetalle = `-- name: CrearPedidoDetalle :one
+INSERT INTO pedido_detalles (
+    pedido_id, 
+    variante_id, 
+    cantidad, 
+    precio_unitario_aplicado, 
+    created_by
+) VALUES (
+    $1, $2, $3, $4, $5
+) RETURNING id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+`
+
+type CrearPedidoDetalleParams struct {
+	PedidoID               pgtype.Int4    `json:"pedido_id"`
+	VarianteID             pgtype.Int4    `json:"variante_id"`
+	Cantidad               int32          `json:"cantidad"`
+	PrecioUnitarioAplicado pgtype.Numeric `json:"precio_unitario_aplicado"`
+	CreatedBy              pgtype.Int4    `json:"created_by"`
+}
+
+func (q *Queries) CrearPedidoDetalle(ctx context.Context, arg CrearPedidoDetalleParams) (PedidoDetalle, error) {
+	row := q.db.QueryRow(ctx, crearPedidoDetalle,
+		arg.PedidoID,
+		arg.VarianteID,
+		arg.Cantidad,
+		arg.PrecioUnitarioAplicado,
+		arg.CreatedBy,
+	)
+	var i PedidoDetalle
+	err := row.Scan(
+		&i.ID,
+		&i.PedidoID,
+		&i.VarianteID,
+		&i.Cantidad,
+		&i.PrecioUnitarioAplicado,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const getCommittedStock = `-- name: GetCommittedStock :one
+SELECT COALESCE(SUM(pd.cantidad), 0)::INT as committed_stock
+FROM pedido_detalles pd
+JOIN pedidos p ON pd.pedido_id = p.id
+WHERE pd.variante_id = $1 
+  AND p.estado IN ('Pendiente', 'En Proceso') -- Estados que reservan stock
+  AND pd.deleted_at IS NULL 
+  AND p.deleted_at IS NULL
+`
+
+func (q *Queries) GetCommittedStock(ctx context.Context, varianteID pgtype.Int4) (int32, error) {
+	row := q.db.QueryRow(ctx, getCommittedStock, varianteID)
+	var committed_stock int32
+	err := row.Scan(&committed_stock)
+	return committed_stock, err
+}
+
 const getPedido = `-- name: GetPedido :one
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos 
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1
 `
 
-// Obtiene el encabezado con los datos de auditoría
 func (q *Queries) GetPedido(ctx context.Context, id int32) (Pedido, error) {
 	row := q.db.QueryRow(ctx, getPedido, id)
 	var i Pedido
@@ -162,15 +210,14 @@ func (q *Queries) GetPedido(ctx context.Context, id int32) (Pedido, error) {
 	return i, err
 }
 
-const listarPedidosPorCliente = `-- name: ListarPedidosPorCliente :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos 
-WHERE cliente_id = $1 AND deleted_at IS NULL 
-ORDER BY fecha_pedido DESC
+const listarPedidos = `-- name: ListarPedidos :many
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
 `
 
-// Para el historial y re-order del cliente (cite: 215, 217)
-func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.Int4) ([]Pedido, error) {
-	rows, err := q.db.Query(ctx, listarPedidosPorCliente, clienteID)
+func (q *Queries) ListarPedidos(ctx context.Context) ([]Pedido, error) {
+	rows, err := q.db.Query(ctx, listarPedidos)
 	if err != nil {
 		return nil, err
 	}
@@ -207,87 +254,83 @@ func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.
 	return items, nil
 }
 
-const registrarPartidaPedido = `-- name: RegistrarPartidaPedido :one
-INSERT INTO pedido_detalles (
-    pedido_id, 
-    variante_id, 
-    cantidad, 
-    precio_unitario_aplicado,
-    created_by
-) VALUES (
-    $1, $2, $3, $4, $5
-) RETURNING id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+const listarPedidosDetalle = `-- name: ListarPedidosDetalle :many
+SELECT id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedido_detalles
+WHERE pedido_id = $1 AND deleted_at IS NULL
 `
 
-type RegistrarPartidaPedidoParams struct {
-	PedidoID               pgtype.Int4    `json:"pedido_id"`
-	VarianteID             pgtype.Int4    `json:"variante_id"`
-	Cantidad               int32          `json:"cantidad"`
-	PrecioUnitarioAplicado pgtype.Numeric `json:"precio_unitario_aplicado"`
-	CreatedBy              pgtype.Int4    `json:"created_by"`
+func (q *Queries) ListarPedidosDetalle(ctx context.Context, pedidoID pgtype.Int4) ([]PedidoDetalle, error) {
+	rows, err := q.db.Query(ctx, listarPedidosDetalle, pedidoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PedidoDetalle
+	for rows.Next() {
+		var i PedidoDetalle
+		if err := rows.Scan(
+			&i.ID,
+			&i.PedidoID,
+			&i.VarianteID,
+			&i.Cantidad,
+			&i.PrecioUnitarioAplicado,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.CreatedBy,
+			&i.UpdatedBy,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-// Agrega cada producto al detalle del pedido (cite: 259)
-func (q *Queries) RegistrarPartidaPedido(ctx context.Context, arg RegistrarPartidaPedidoParams) (PedidoDetalle, error) {
-	row := q.db.QueryRow(ctx, registrarPartidaPedido,
-		arg.PedidoID,
-		arg.VarianteID,
-		arg.Cantidad,
-		arg.PrecioUnitarioAplicado,
-		arg.CreatedBy,
-	)
-	var i PedidoDetalle
-	err := row.Scan(
-		&i.ID,
-		&i.PedidoID,
-		&i.VarianteID,
-		&i.Cantidad,
-		&i.PrecioUnitarioAplicado,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-		&i.CreatedBy,
-		&i.UpdatedBy,
-		&i.DeletedBy,
-	)
-	return i, err
-}
-
-const softDeletePedido = `-- name: SoftDeletePedido :exec
-UPDATE pedidos
-SET 
-    deleted_at = CURRENT_TIMESTAMP,
-    deleted_by = $2,
-    estado = 'Cancelado'
-WHERE id = $1
+const listarPedidosPorCliente = `-- name: ListarPedidosPorCliente :many
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+WHERE cliente_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC
 `
 
-type SoftDeletePedidoParams struct {
-	ID        int32       `json:"id"`
-	DeletedBy pgtype.Int4 `json:"deleted_by"`
-}
-
-// Cancelación lógica del pedido
-func (q *Queries) SoftDeletePedido(ctx context.Context, arg SoftDeletePedidoParams) error {
-	_, err := q.db.Exec(ctx, softDeletePedido, arg.ID, arg.DeletedBy)
-	return err
-}
-
-const softDeletePedidoDetalle = `-- name: SoftDeletePedidoDetalle :exec
-UPDATE pedido_detalles
-SET 
-    deleted_at = CURRENT_TIMESTAMP,
-    deleted_by = $2
-WHERE id = $1
-`
-
-type SoftDeletePedidoDetalleParams struct {
-	ID        int32       `json:"id"`
-	DeletedBy pgtype.Int4 `json:"deleted_by"`
-}
-
-// Borrado lógico del detalle del pedido
-func (q *Queries) SoftDeletePedidoDetalle(ctx context.Context, arg SoftDeletePedidoDetalleParams) error {
-	_, err := q.db.Exec(ctx, softDeletePedidoDetalle, arg.ID, arg.DeletedBy)
-	return err
+func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.Int4) ([]Pedido, error) {
+	rows, err := q.db.Query(ctx, listarPedidosPorCliente, clienteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Pedido
+	for rows.Next() {
+		var i Pedido
+		if err := rows.Scan(
+			&i.ID,
+			&i.Folio,
+			&i.ClienteID,
+			&i.UsuarioID,
+			&i.Estado,
+			&i.MetodoPago,
+			&i.Subtotal,
+			&i.Iva,
+			&i.TotalOrden,
+			&i.EsBackorder,
+			&i.FechaPedido,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.CreatedBy,
+			&i.UpdatedBy,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

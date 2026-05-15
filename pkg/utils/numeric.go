@@ -32,3 +32,16 @@ func ToTimestamp(t time.Time) pgtype.Timestamp {
 func ToDateNow() pgtype.Timestamp {
 	return ToTimestamp(time.Now())
 }
+
+// NumericToFloat64 convierte un pgtype.Numeric a float64.
+func NumericToFloat64(n pgtype.Numeric) (float64, error) {
+	if !n.Valid {
+		return 0, fmt.Errorf("valor numeric no es válido")
+	}
+	var f float64
+	err := n.Scan(&f)
+	if err != nil {
+		return 0, err
+	}
+	return f, nil
+}

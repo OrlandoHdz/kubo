@@ -1,0 +1,130 @@
+Documentación: Alojamiento Web Estático en Alibaba Cloud OSS con SSL Automatizado (Let's Encrypt)
+Objetivo: Alojar un sitio web estático (index.html) en un bucket de Alibaba Cloud OSS, vinculado a un dominio personalizado 
+(www.arsenalwelds.com), con generación y renovación automática de certificados SSL gratuitos mediante acme.sh desde un servidor ECS.
+
+Requisitos Previos
+Dominio: Gestionado en cualquier proveedor (ej. GoDaddy, Hostinger).
+
+Bucket OSS: Creado en Alibaba Cloud. La política de lectura (ACL) debe estar en Public Read.
+
+Servidor ECS (Linux): Actuará como orquestador para renovar los certificados.
+
+Usuario RAM (OpenAPI): Creado en Alibaba Cloud con su AccessKey ID y AccessKey Secret. Debe tener estas 3 políticas asignadas:
+
+AliyunDNSFullAccess
+
+AliyunOSSFullAccess
+
+AliyunYundunCertFullAccess (o AliyunCASFullAccess)
+
+Fase 1: Configuración de OSS y DNS
+1. Configurar Alojamiento Estático
+En la consola de OSS, ir al Bucket > Basic Settings > Static Pages.
+
+Establecer Default Homepage a index.html.
+
+2. Vincular el Dominio
+Ir a Bucket Settings > Domain Names.
+
+Clic en Bind Custom Domain y agregar www.arsenalwelds.com.
+
+Copiar el Endpoint generado (ej. tu-bucket.oss-region.aliyuncs.com).
+
+3. Configurar DNS
+En el proveedor del dominio, crear un registro DNS:
+
+Tipo: CNAME
+
+Nombre: www
+
+Valor: El Endpoint de OSS copiado en el paso anterior.
+
+Fase 2: Automatización de SSL en Servidor ECS
+1. Preparar el entorno (Instalar herramientas)
+Conectarse por SSH al servidor ECS (ecs-user) y ejecutar:
+
+Bash
+# Instalar descompresor
+sudo yum install unzip -y  # (o apt install unzip -y en Ubuntu)
+
+# Instalar ossutil
+sudo -v ; curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+# Instalar acme.sh
+curl https://get.acme.sh | sh -s email=tu_correo@ejemplo.com
+source ~/.bashrc
+2. Emitir el Certificado Inicial
+Bash
+# Declarar credenciales RAM temporalmente
+export Ali_Key="TU_ACCESS_KEY_ID"
+export Ali_Secret="TU_ACCESS_KEY_SECRET"
+
+# Generar certificado (Validación DNS automática)
+acme.sh --issue --dns dns_ali -d www.arsenalwelds.com -d arsenalwelds.com --server letsencrypt
+3. Crear Script de Despliegue en OSS
+Bash
+# Crear directorio y archivo
+mkdir -p /home/ecs-user/certificados_arsenal
+nano /home/ecs-user/deploy_oss_arsenal.sh
+Contenido de deploy_oss_arsenal.sh:
+
+Bash
+#!/bin/bash
+
+# --- CONFIGURACIÓN ---
+DOMAIN="www.arsenalwelds.com"
+BUCKET="tu-bucket-oss" 
+ENDPOINT="oss-us-east-1.aliyuncs.com" # Cambiar según la región
+ACCESS_KEY="TU_ACCESS_KEY_ID_AQUI"
+SECRET_KEY="TU_ACCESS_KEY_SECRET_AQUI"
+
+CERT_PATH="/home/ecs-user/certificados_arsenal/cert.pem"
+KEY_PATH="/home/ecs-user/certificados_arsenal/key.pem"
+XML_PATH="/home/ecs-user/certificados_arsenal/cname.xml"
+
+# --- 1. GENERAR ARCHIVO XML ---
+cat <<EOF > $XML_PATH
+<?xml version="1.0" encoding="UTF-8"?>
+<BucketCnameConfiguration>
+  <Cname>
+    <Domain>$DOMAIN</Domain>
+    <CertificateConfiguration>
+      <Certificate>
+$(cat $CERT_PATH)
+      </Certificate>
+      <PrivateKey>
+$(cat $KEY_PATH)
+      </PrivateKey>
+      <Force>true</Force>
+    </CertificateConfiguration>
+  </Cname>
+</BucketCnameConfiguration>
+EOF
+
+# --- 2. SUBIR CERTIFICADO A OSS ---
+/usr/bin/ossutil bucket-cname --method put --item certificate oss://$BUCKET $XML_PATH -e $ENDPOINT -i $ACCESS_KEY -k $SECRET_KEY
+Dar permisos de ejecución:
+
+Bash
+chmod +x /home/ecs-user/deploy_oss_arsenal.sh
+4. Instalar y Vincular Automatización
+Extraer los certificados y configurar el cronjob para ejecutar el script en cada renovación:
+
+Bash
+acme.sh --install-cert -d www.arsenalwelds.com --ecc \
+--key-file       /home/ecs-user/certificados_arsenal/key.pem  \
+--fullchain-file /home/ecs-user/certificados_arsenal/cert.pem \
+--reloadcmd     "/home/ecs-user/deploy_oss_arsenal.sh"
+Fase 3: Forzar Redirección de HTTP a HTTPS
+Dado que OSS no cuenta con una redirección HTTPS nativa sin usar un CDN adicional, se implementa una redirección del lado del cliente mediante JavaScript.
+
+Acción: Insertar el siguiente script en el archivo index.html, justo debajo de la etiqueta <head>:
+
+HTML
+<script>
+  if (window.location.protocol !== "https:") {
+      window.location.replace("https://" + window.location.hostname + window.location.pathname + window.location.search);
+  }
+</script>
+<meta http-equiv="Upgrade-Insecure-Requests">
+Guardar y subir el archivo actualizado al Bucket OSS.

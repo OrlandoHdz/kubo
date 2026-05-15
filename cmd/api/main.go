@@ -35,7 +35,7 @@ func main() {
 	}))
 
 	// 3. Cargar Rutas
-	routes.SetupRoutes(r, queries)
+	routes.SetupRoutes(r, queries, pool)
 
 	log.Println("🚀 Kubo API corriendo en :8080")
 	r.Run(":8080")

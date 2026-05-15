@@ -60,6 +60,9 @@ ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey
 
 ## Ejecutamos la imagen
 docker load -i kubo-api.tar
+## Detener el anterior container
+sudo docker stop <CONTAINER_ID>
+## Levantar el nuevo container
 docker run -d -p 8080:8080 kubo-api:v1
 
 

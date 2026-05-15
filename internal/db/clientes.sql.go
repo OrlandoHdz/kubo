@@ -203,6 +203,36 @@ func (q *Queries) GetCliente(ctx context.Context, id int32) (Cliente, error) {
 	return i, err
 }
 
+const getClienteByRFC = `-- name: GetClienteByRFC :one
+SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM clientes
+WHERE rfc = $1 AND deleted_at IS NULL LIMIT 1
+`
+
+func (q *Queries) GetClienteByRFC(ctx context.Context, rfc string) (Cliente, error) {
+	row := q.db.QueryRow(ctx, getClienteByRFC, rfc)
+	var i Cliente
+	err := row.Scan(
+		&i.ID,
+		&i.NombreComercial,
+		&i.RazonSocial,
+		&i.Rfc,
+		&i.Estado,
+		&i.MontoMinimoCompra,
+		&i.LineaCreditoTotal,
+		&i.LineaCreditoUtilizada,
+		&i.DiasCredito,
+		&i.PermitirPagoCredito,
+		&i.MetodoPagoPreferente,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const listarClientesActivos = `-- name: ListarClientesActivos :many
 SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM clientes
 WHERE deleted_at IS NULL

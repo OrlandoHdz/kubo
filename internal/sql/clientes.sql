@@ -57,6 +57,10 @@ WHERE id = $1;
 SELECT * FROM clientes
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1;
 
+-- name: GetClienteByRFC :one
+SELECT * FROM clientes
+WHERE rfc = $1 AND deleted_at IS NULL LIMIT 1;
+
 -- name: ListarClientesActivos :many
 -- Lista clientes para el panel de administración [cite: 139]
 SELECT * FROM clientes

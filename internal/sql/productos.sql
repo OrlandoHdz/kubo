@@ -20,6 +20,10 @@ INSERT INTO productos_padre (
 SELECT * FROM productos_padre 
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1;
 
+-- name: GetProductoPadreByNombre :one
+SELECT * FROM productos_padre 
+WHERE nombre_tecnico = $1 AND deleted_at IS NULL LIMIT 1;
+
 -- name: ListarProductosPadre :many
 SELECT * FROM productos_padre 
 WHERE deleted_at IS NULL;
@@ -59,14 +63,19 @@ INSERT INTO productos_variantes (
     stock_actual, 
     unidad_medida, 
     lead_time_dias, 
+    especificaciones,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 ) RETURNING *;
 
 -- name: GetVarianteBySKU :one
 SELECT * FROM productos_variantes 
 WHERE sku = $1 AND deleted_at IS NULL LIMIT 1;
+
+-- name: GetVariante :one
+SELECT * FROM productos_variantes 
+WHERE id = $1 AND deleted_at IS NULL LIMIT 1;
 
 -- name: ListarVariantesPorPadre :many
 -- Para mostrar todas las medidas de un mismo producto (cite: 184)
@@ -81,6 +90,21 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
 WHERE id = $1;
+
+-- name: ActualizarVariante :one
+UPDATE productos_variantes
+SET 
+    sku = $2,
+    medida = $3,
+    precio_lista = $4,
+    stock_actual = $5,
+    unidad_medida = $6,
+    lead_time_dias = $7,
+    especificaciones = $8,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $9
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
 
 -- name: SoftDeleteVariante :exec
 UPDATE productos_variantes
