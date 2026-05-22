@@ -38,10 +38,9 @@ func NumericToFloat64(n pgtype.Numeric) (float64, error) {
 	if !n.Valid {
 		return 0, fmt.Errorf("valor numeric no es válido")
 	}
-	var f float64
-	err := n.Scan(&f)
+	f8, err := n.Float64Value()
 	if err != nil {
 		return 0, err
 	}
-	return f, nil
+	return f8.Float64, nil
 }

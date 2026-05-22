@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/OrlandoHdz/kubo/internal/auth"
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,11 +49,36 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]any{
+	userMap := map[string]any{
+		"id":    user.ID,
+		"email": user.Email,
+		"rol":   user.Rol,
+	}
+	if user.ClienteID.Valid {
+		userMap["cliente_id"] = user.ClienteID.Int32
+	}
+
+	response := map[string]any{
 		"token": token,
-		"user": map[string]any{
-			"email": user.Email,
-			"rol":   user.Rol,
-		},
-	})
+		"user":  userMap,
+	}
+
+	if user.Rol == "cliente" && user.ClienteID.Valid {
+		cliente, err := h.queries.GetCliente(c.Request.Context(), user.ClienteID.Int32)
+		if err != nil {
+			log.Printf("Error al obtener cliente para usuario ID %d: %v", user.ID, err)
+			response["credito_disponible"] = 0.0
+		} else {
+			total, err1 := utils.NumericToFloat64(cliente.LineaCreditoTotal)
+			utilizada, err2 := utils.NumericToFloat64(cliente.LineaCreditoUtilizada)
+			if err1 != nil || err2 != nil {
+				log.Printf("Error al convertir limites de credito a float64 para cliente ID %d: err1=%v, err2=%v", cliente.ID, err1, err2)
+				response["credito_disponible"] = 0.0
+			} else {
+				response["credito_disponible"] = total - utilizada
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
