@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
@@ -93,29 +91,7 @@ func (s *ClientesIntegracionService) mapRegistroToParams(reg map[string]interfac
 	}
 }
 
-func toInt4(val interface{}) pgtype.Int4 {
-	if val == nil {
-		return pgtype.Int4{Valid: false}
-	}
-	
-	var i int32
-	switch v := val.(type) {
-	case int32:
-		i = v
-	case int:
-		i = int32(v)
-	case int64:
-		i = int32(v)
-	case float64:
-		i = int32(v)
-	case string:
-		parsed, _ := strconv.Atoi(strings.TrimSpace(v))
-		i = int32(parsed)
-	default:
-		return pgtype.Int4{Valid: false}
-	}
-	return pgtype.Int4{Int32: i, Valid: true}
-}
+// toInt4 moved to facturas_integracion_service.go
 
 func toText(val interface{}) pgtype.Text {
 	if val == nil {
@@ -125,29 +101,29 @@ func toText(val interface{}) pgtype.Text {
 	return pgtype.Text{String: str, Valid: true}
 }
 
-func toNumeric(val interface{}) pgtype.Numeric {
-	if val == nil {
-		return pgtype.Numeric{Valid: false}
-	}
-	var f float64
-	switch v := val.(type) {
-	case float64:
-		f = v
-	case int32:
-		f = float64(v)
-	case int64:
-		f = float64(v)
-	case int:
-		f = float64(v)
-	case string:
-		f, _ = strconv.ParseFloat(strings.TrimSpace(v), 64)
-	default:
-		return pgtype.Numeric{Valid: false}
-	}
+// func toNumeric(val interface{}) pgtype.Numeric {
+// 	if val == nil {
+// 		return pgtype.Numeric{Valid: false}
+// 	}
+// 	var f float64
+// 	switch v := val.(type) {
+// 	case float64:
+// 		f = v
+// 	case int32:
+// 		f = float64(v)
+// 	case int64:
+// 		f = float64(v)
+// 	case int:
+// 		f = float64(v)
+// 	case string:
+// 		f, _ = strconv.ParseFloat(strings.TrimSpace(v), 64)
+// 	default:
+// 		return pgtype.Numeric{Valid: false}
+// 	}
 
-	num := pgtype.Numeric{}
-	num.Int = big.NewInt(int64(f * 100))
-	num.Exp = -2
-	num.Valid = true
-	return num
-}
+// 	num := pgtype.Numeric{}
+// 	num.Int = big.NewInt(int64(f * 100))
+// 	num.Exp = -2
+// 	num.Valid = true
+// 	return num
+// }

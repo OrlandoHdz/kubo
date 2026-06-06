@@ -51,6 +51,11 @@ SET
     updated_by = $3
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
+-- name: CancelarDetallePedido :exec
+UPDATE pedido_detalles
+SET deleted_at = CURRENT_TIMESTAMP,
+    deleted_by = $2
+WHERE id = $1 AND deleted_at IS NULL;
 -- name: GetCommittedStock :one
 SELECT COALESCE(SUM(pd.cantidad), 0)::INT as committed_stock
 FROM pedido_detalles pd

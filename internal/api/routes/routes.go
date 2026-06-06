@@ -13,6 +13,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 	authHandler := handlers.NewAuthHandler(queries)
 	solicitudHandler := handlers.NewSolicitudRegistroHandler(queries)
 	clientesIntegracionHandler := handlers.NewClientesIntegracionHandler(queries)
+	facturasIntegracionHandler := handlers.NewFacturasIntegracionHandler(queries)
+	existenciasIntegracionHandler := handlers.NewExistenciasIntegracionHandler(queries)
 
 	// Servir archivos subidos estáticamente (ej. para que la URL /uploads/... devuelva el PDF)
 	r.Static("/uploads", "./uploads")
@@ -63,7 +65,29 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			clientesIntegracion.GET("/cve/:cve", clientesIntegracionHandler.ObtenerPorCveCte)
 			clientesIntegracion.POST("/", clientesIntegracionHandler.Crear)
 		}
+		// Facturas Integración
+		facturasIntegracion := v1.Group("/facturas-integracion")
+		{
+			facturasIntegracion.GET("", facturasIntegracionHandler.Listar)
+			facturasIntegracion.GET("/:id", facturasIntegracionHandler.Obtener)
+			facturasIntegracion.POST("/", facturasIntegracionHandler.Crear)
+		}
+		// Facturas SAI
+		facturasSai := v1.Group("/facturas-sai")
+		{
+			facturasSai.GET("", facturasIntegracionHandler.Listar)
+			facturasSai.GET("/:id", facturasIntegracionHandler.Obtener)
+			facturasSai.POST("/", facturasIntegracionHandler.Crear)
+		}
 
+		// Existencias Integración
+		existenciasIntegracion := v1.Group("/existencias-integracion")
+		{
+			existenciasIntegracion.GET("", existenciasIntegracionHandler.Listar)
+			existenciasIntegracion.GET("/:id", existenciasIntegracionHandler.Obtener)
+			existenciasIntegracion.POST("", existenciasIntegracionHandler.Crear)
+			existenciasIntegracion.PUT("", existenciasIntegracionHandler.Upsert)
+		}
 		// Productos (Privados - Gestión)
 		productos := v1.Group("/productos")
 		{
@@ -91,6 +115,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			pedidos.GET("/cliente/:cliente_id", pedidosHandler.ListarPorCliente)
 			pedidos.POST("", pedidosHandler.Crear)
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
+			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
 		}
 
 		// Clientes (Sistema Local)

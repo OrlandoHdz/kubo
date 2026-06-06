@@ -81,6 +81,25 @@ scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey
 ## Crear la base de datos
 docker-compose -f docker-compose.yml up -d
 
+## Ejecutar los binarios
+./bin/worker -facturas /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/FACTURAS/facturac.DBF
+./bin/worker -existencias /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/EXISTENCIAS/EXISTE.DBF
+./bin/worker -clientes /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/CLIENTES/CLIENTES.DBF
 
 
+## URL para pasarela de pagos BANREGIO
+curl -k -X POST https://testcolecto.banregio.com/adq/ \
+  -F "BNRG_ID_AFILIACION=8379502" \
+  -F "BNRG_ID_MEDIO=JCZSH8TV" \
+  -F "BNRG_NUMERO_TARJETA=4456530000001096" \
+  -F "BNRG_FECHA_EXP=1226" \
+  -F "BNRG_CODIGO_SEGURIDAD=123" \
+  -F "BNRG_MONTO_TRANS=100.00" \
+  -F "BNRG_FOLIO=FOLIO123456" \
+  -F "BNRG_MODO_TRANS=AUT" \
+  -F "BNRG_HORA_LOCAL=094130" \
+  -F "BNRG_FECHA_LOCAL=20260604" \
+  -F "BNRG_MODO_ENTRADA=MANUAL" \
+  -F "BNRG_CMD_TRANS=VENTA"
 
+  

@@ -246,3 +246,69 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 
 	c.JSON(http.StatusOK, pedido)
 }
+
+// CancelarDetalle cancela un detalle de pedido (soft‑delete) y, si solo queda un detalle activo, cancela el pedido completo.
+func (h *PedidosHandler) CancelarDetalle(c *gin.Context) {
+    // Obtener IDs del pedido y del detalle
+    pedidoIDStr := c.Param("id")
+    detalleIDStr := c.Param("detalle_id")
+    pedidoID, err := strconv.Atoi(pedidoIDStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de pedido inválido"})
+        return
+    }
+    detalleID, err := strconv.Atoi(detalleIDStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de detalle inválido"})
+        return
+    }
+
+    // Verificar que el pedido esté pendiente y dentro del plazo de 2 h
+    pedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
+    if err != nil || pedido.Estado != "Pendiente" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "No se puede cancelar el detalle de este pedido"})
+        return
+    }
+
+    // Obtener ID del usuario autenticado (si está disponible)
+    userID := int32(0)
+    if uid, ok := c.Get("userID"); ok {
+        if v, ok2 := uid.(int32); ok2 {
+            userID = v
+        }
+    }
+
+    // Cancelar detalle (soft‑delete)
+    if err := h.queries.CancelarDetallePedido(c.Request.Context(), db.CancelarDetallePedidoParams{
+        ID:        int32(detalleID),
+        DeletedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
+    }); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar detalle: " + err.Error()})
+        return
+    }
+
+    // Contar los detalles activos restantes
+    detalles, _ := h.queries.ListarPedidosDetalle(c.Request.Context(), pgtype.Int4{Int32: int32(pedidoID), Valid: true})
+    activos := 0
+    for _, d := range detalles {
+        if !d.DeletedAt.Valid {
+            activos++
+        }
+    }
+
+    // Si queda 0 o 1 detalle activo, cancelar el pedido completo
+    if activos <= 1 {
+        _, err := h.queries.ActualizarEstadoPedido(c.Request.Context(), db.ActualizarEstadoPedidoParams{
+            ID:        int32(pedidoID),
+            Estado:    "Cancelado",
+            UpdatedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
+        })
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar pedido completo: " + err.Error()})
+            return
+        }
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Detalle cancelado"})
+}
+

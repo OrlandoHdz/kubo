@@ -52,6 +52,23 @@ func (q *Queries) ActualizarEstadoPedido(ctx context.Context, arg ActualizarEsta
 	return i, err
 }
 
+const cancelarDetallePedido = `-- name: CancelarDetallePedido :exec
+UPDATE pedido_detalles
+SET deleted_at = CURRENT_TIMESTAMP,
+    deleted_by = $2
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type CancelarDetallePedidoParams struct {
+	ID        int32       `json:"id"`
+	DeletedBy pgtype.Int4 `json:"deleted_by"`
+}
+
+func (q *Queries) CancelarDetallePedido(ctx context.Context, arg CancelarDetallePedidoParams) error {
+	_, err := q.db.Exec(ctx, cancelarDetallePedido, arg.ID, arg.DeletedBy)
+	return err
+}
+
 const crearPedido = `-- name: CrearPedido :one
 INSERT INTO pedidos (
     folio, 

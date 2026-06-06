@@ -53,6 +53,87 @@ type ClientesIntegracion struct {
 	EmailCte  pgtype.Text    `json:"email_cte"`
 }
 
+type ExistenciasIntegracion struct {
+	ID         int32            `json:"id"`
+	CseProd    pgtype.Text      `json:"cse_prod"`
+	CveProd    string           `json:"cve_prod"`
+	Lugar      string           `json:"lugar"`
+	Existencia pgtype.Numeric   `json:"existencia"`
+	MedProd    pgtype.Numeric   `json:"med_prod"`
+	FechUmod   pgtype.Timestamp `json:"fech_umod"`
+	InvIni     pgtype.Int8      `json:"inv_ini"`
+	Lote       pgtype.Text      `json:"lote"`
+	FechLote   pgtype.Timestamp `json:"fech_lote"`
+	RefLote    pgtype.Text      `json:"ref_lote"`
+	CostoProm  pgtype.Numeric   `json:"costo_prom"`
+	NewMed     pgtype.Text      `json:"new_med"`
+	Costuepeps pgtype.Numeric   `json:"costuepeps"`
+	Costoprom2 pgtype.Numeric   `json:"costoprom2"`
+}
+
+type FacturasIntegracion struct {
+	ID        int32            `json:"id"`
+	NoFac     string           `json:"no_fac"`
+	NoPed     pgtype.Text      `json:"no_ped"`
+	CveCte    pgtype.Int4      `json:"cve_cte"`
+	CveAge    pgtype.Int4      `json:"cve_age"`
+	FaltaFac  pgtype.Timestamp `json:"falta_fac"`
+	StatusFac pgtype.Text      `json:"status_fac"`
+	SubtFac   pgtype.Numeric   `json:"subt_fac"`
+	Descuento pgtype.Numeric   `json:"descuento"`
+	Descue    pgtype.Numeric   `json:"descue"`
+	TotalFac  pgtype.Numeric   `json:"total_fac"`
+	SaldoFac  pgtype.Numeric   `json:"saldo_fac"`
+	FPago     pgtype.Timestamp `json:"f_pago"`
+	Contrarec pgtype.Text      `json:"contrarec"`
+	Lugar     pgtype.Text      `json:"lugar"`
+	CveFactu  pgtype.Text      `json:"cve_factu"`
+	CveMon    pgtype.Text      `json:"cve_mon"`
+	TipCam    pgtype.Numeric   `json:"tip_cam"`
+	SaldoFac2 pgtype.Numeric   `json:"saldo_fac2"`
+	Staley    pgtype.Text      `json:"staley"`
+	CveSuc    pgtype.Int4      `json:"cve_suc"`
+	Mes       pgtype.Int4      `json:"mes"`
+	Anio      pgtype.Int4      `json:"anio"`
+	Usuario   pgtype.Text      `json:"usuario"`
+	Trans     pgtype.Text      `json:"trans"`
+	Staley2   pgtype.Text      `json:"staley2"`
+	PedInt    pgtype.Text      `json:"ped_int"`
+	ComCob    pgtype.Numeric   `json:"com_cob"`
+	Cierre    pgtype.Timestamp `json:"cierre"`
+	UTipCam   pgtype.Numeric   `json:"u_tip_cam"`
+	CveAge2   pgtype.Int4      `json:"cve_age2"`
+	ComCob2   pgtype.Numeric   `json:"com_cob2"`
+	DinCom    pgtype.Numeric   `json:"din_com"`
+	DinCom2   pgtype.Numeric   `json:"din_com2"`
+	FechSal   pgtype.Timestamp `json:"fech_sal"`
+	FechEmb   pgtype.Timestamp `json:"fech_emb"`
+	CveFlet   pgtype.Text      `json:"cve_flet"`
+	TotFlet   pgtype.Numeric   `json:"tot_flet"`
+	TotEnv    pgtype.Numeric   `json:"tot_env"`
+	PrecFlet  pgtype.Numeric   `json:"prec_flet"`
+	PrvReal   pgtype.Text      `json:"prv_real"`
+	TimpCar   pgtype.Numeric   `json:"timp_car"`
+	Numpol    pgtype.Text      `json:"numpol"`
+	Numpolcan pgtype.Text      `json:"numpolcan"`
+	ImpCarac  pgtype.Numeric   `json:"imp_carac"`
+	Pesotot   pgtype.Numeric   `json:"pesotot"`
+	RetivaFac pgtype.Numeric   `json:"retiva_fac"`
+	Deposito  pgtype.Numeric   `json:"deposito"`
+	SucDepo   pgtype.Text      `json:"suc_depo"`
+	Status2   pgtype.Text      `json:"status_2"`
+	Cvedirent pgtype.Text      `json:"cvedirent"`
+	Reimpre   pgtype.Int4      `json:"reimpre"`
+	Descue2   pgtype.Numeric   `json:"descue2"`
+	Descue3   pgtype.Numeric   `json:"descue3"`
+	Descue4   pgtype.Numeric   `json:"descue4"`
+	NoPeda    pgtype.Text      `json:"no_peda"`
+	CveSuca   pgtype.Text      `json:"cve_suca"`
+	CveFactua pgtype.Text      `json:"cve_factua"`
+	CveEntre  pgtype.Text      `json:"cve_entre"`
+	Ieps      pgtype.Numeric   `json:"ieps"`
+}
+
 type Pedido struct {
 	ID          int32            `json:"id"`
 	Folio       string           `json:"folio"`
