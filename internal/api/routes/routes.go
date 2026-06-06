@@ -116,6 +116,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			pedidos.POST("", pedidosHandler.Crear)
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
 			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
+		pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
 		}
 
 		// Clientes (Sistema Local)

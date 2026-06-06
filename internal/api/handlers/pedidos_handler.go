@@ -28,14 +28,18 @@ type PedidoDetalleInput struct {
 	Precio     float64 `json:"precio" binding:"required"`
 }
 
+type AgregarProductosInput struct {
+	Items []PedidoDetalleInput `json:"items" binding:"required,min=1"`
+}
+
 type CrearPedidoInput struct {
-	ClienteID   int32                `json:"cliente_id" binding:"required"`
-	UsuarioID   int32                `json:"usuario_id" binding:"required"`
-	MetodoPago  string               `json:"metodo_pago" binding:"required"` // 'Tarjeta' o 'Crédito'
-	Subtotal    float64              `json:"subtotal" binding:"required"`
-	Iva         float64              `json:"iva" binding:"required"`
-	TotalOrden  float64              `json:"total_orden" binding:"required"`
-	Items       []PedidoDetalleInput `json:"items" binding:"required,min=1"`
+	ClienteID  int32                `json:"cliente_id" binding:"required"`
+	UsuarioID  int32                `json:"usuario_id" binding:"required"`
+	MetodoPago string               `json:"metodo_pago" binding:"required"` // 'Tarjeta' o 'Crédito'
+	Subtotal   float64              `json:"subtotal" binding:"required"`
+	Iva        float64              `json:"iva" binding:"required"`
+	TotalOrden float64              `json:"total_orden" binding:"required"`
+	Items      []PedidoDetalleInput `json:"items" binding:"required,min=1"`
 }
 
 func (h *PedidosHandler) Crear(c *gin.Context) {
@@ -247,68 +251,160 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 	c.JSON(http.StatusOK, pedido)
 }
 
-// CancelarDetalle cancela un detalle de pedido (soft‑delete) y, si solo queda un detalle activo, cancela el pedido completo.
-func (h *PedidosHandler) CancelarDetalle(c *gin.Context) {
-    // Obtener IDs del pedido y del detalle
-    pedidoIDStr := c.Param("id")
-    detalleIDStr := c.Param("detalle_id")
-    pedidoID, err := strconv.Atoi(pedidoIDStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de pedido inválido"})
-        return
-    }
-    detalleID, err := strconv.Atoi(detalleIDStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "ID de detalle inválido"})
-        return
-    }
+func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
+	// Parse order ID from URL
+	pedidoIDStr := c.Param("id")
+	pedidoID, err := strconv.Atoi(pedidoIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de pedido inválido"})
+		return
+	}
 
-    // Verificar que el pedido esté pendiente y dentro del plazo de 2 h
-    pedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
-    if err != nil || pedido.Estado != "Pendiente" {
-        c.JSON(http.StatusForbidden, gin.H{"error": "No se puede cancelar el detalle de este pedido"})
-        return
-    }
+	// Bind input JSON
+	var input AgregarProductosInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
+		return
+	}
 
-    // Obtener ID del usuario autenticado (si está disponible)
-    userID := int32(0)
-    if uid, ok := c.Get("userID"); ok {
-        if v, ok2 := uid.(int32); ok2 {
-            userID = v
-        }
-    }
+	// Verify order exists and is pending and within 2h window
+	pedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
+	if err != nil || pedido.Estado != "Pendiente" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Solo se pueden agregar productos a pedidos pendientes"})
+		return
+	}
+	// Check time window (same logic as puedeModificar)
+	createdAt := pedido.CreatedAt.Time
+	if pedido.FechaPedido.Valid {
+		createdAt = pedido.FechaPedido.Time
+	}
+	diffHoras := time.Since(createdAt).Hours()
+	if diffHoras >= 2 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "El plazo para modificar este pedido ha vencido"})
+		return
+	}
 
-    // Cancelar detalle (soft‑delete)
-    if err := h.queries.CancelarDetallePedido(c.Request.Context(), db.CancelarDetallePedidoParams{
-        ID:        int32(detalleID),
-        DeletedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
-    }); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar detalle: " + err.Error()})
-        return
-    }
+	// Start transaction
+	tx, err := h.pool.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al iniciar transacción: " + err.Error()})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+	qtx := h.queries.WithTx(tx)
 
-    // Contar los detalles activos restantes
-    detalles, _ := h.queries.ListarPedidosDetalle(c.Request.Context(), pgtype.Int4{Int32: int32(pedidoID), Valid: true})
-    activos := 0
-    for _, d := range detalles {
-        if !d.DeletedAt.Valid {
-            activos++
-        }
-    }
+	// Insert each item as detalle
+	var addedSubtotal float64
+	for _, item := range input.Items {
+		// Validate stock (similar to Crear)
+		variante, err := qtx.GetVariante(c.Request.Context(), item.VarianteID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Variante %d no encontrada", item.VarianteID)})
+			return
+		}
+		committed, _ := qtx.GetCommittedStock(c.Request.Context(), pgtype.Int4{Int32: item.VarianteID, Valid: true})
+		disponible := variante.StockActual - committed
+		if disponible < item.Cantidad {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Stock insuficiente para variante %d", item.VarianteID)})
+			return
+		}
+		// Create detalle
+		_, err = qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+			PedidoID:               pgtype.Int4{Int32: int32(pedidoID), Valid: true},
+			VarianteID:             pgtype.Int4{Int32: item.VarianteID, Valid: true},
+			Cantidad:               item.Cantidad,
+			PrecioUnitarioAplicado: utils.ToNumeric(item.Precio),
+			CreatedBy:              pgtype.Int4{Int32: int32(0), Valid: false}, // assuming system user
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle: %s", err.Error())})
+			return
+		}
+		addedSubtotal += item.Precio * float64(item.Cantidad)
+	}
 
-    // Si queda 0 o 1 detalle activo, cancelar el pedido completo
-    if activos <= 1 {
-        _, err := h.queries.ActualizarEstadoPedido(c.Request.Context(), db.ActualizarEstadoPedidoParams{
-            ID:        int32(pedidoID),
-            Estado:    "Cancelado",
-            UpdatedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
-        })
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar pedido completo: " + err.Error()})
-            return
-        }
-    }
+	// Update order totals
+	_, err = tx.Exec(c.Request.Context(), "UPDATE pedidos SET subtotal = subtotal + $1, total_orden = total_orden + $1 WHERE id = $2", utils.ToNumeric(addedSubtotal), int32(pedidoID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar totales del pedido: " + err.Error()})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Detalle cancelado"})
+	// Commit transaction
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al confirmar transacción: " + err.Error()})
+		return
+	}
+
+	// Return updated pedido
+	updatedPedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener pedido actualizado"})
+		return
+	}
+	c.JSON(http.StatusOK, updatedPedido)
 }
 
+func (h *PedidosHandler) CancelarDetalle(c *gin.Context) {
+	// Obtener IDs del pedido y del detalle
+	pedidoIDStr := c.Param("id")
+	detalleIDStr := c.Param("detalle_id")
+	pedidoID, err := strconv.Atoi(pedidoIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de pedido inválido"})
+		return
+	}
+	detalleID, err := strconv.Atoi(detalleIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de detalle inválido"})
+		return
+	}
+
+	// Verificar que el pedido esté pendiente y dentro del plazo de 2 h
+	pedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
+	if err != nil || pedido.Estado != "Pendiente" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No se puede cancelar el detalle de este pedido"})
+		return
+	}
+
+	// Obtener ID del usuario autenticado (si está disponible)
+	userID := int32(0)
+	if uid, ok := c.Get("userID"); ok {
+		if v, ok2 := uid.(int32); ok2 {
+			userID = v
+		}
+	}
+
+	// Cancelar detalle (soft‑delete)
+	if err := h.queries.CancelarDetallePedido(c.Request.Context(), db.CancelarDetallePedidoParams{
+		ID:        int32(detalleID),
+		DeletedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar detalle: " + err.Error()})
+		return
+	}
+
+	// Contar los detalles activos restantes
+	detalles, _ := h.queries.ListarPedidosDetalle(c.Request.Context(), pgtype.Int4{Int32: int32(pedidoID), Valid: true})
+	activos := 0
+	for _, d := range detalles {
+		if !d.DeletedAt.Valid {
+			activos++
+		}
+	}
+
+	// Si queda 0 o 1 detalle activo, cancelar el pedido completo
+	if activos <= 1 {
+		_, err := h.queries.ActualizarEstadoPedido(c.Request.Context(), db.ActualizarEstadoPedidoParams{
+			ID:        int32(pedidoID),
+			Estado:    "Cancelado",
+			UpdatedBy: pgtype.Int4{Int32: userID, Valid: userID != 0},
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar pedido completo: " + err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Detalle cancelado"})
+}
