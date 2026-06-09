@@ -87,8 +87,25 @@ docker-compose -f docker-compose.yml up -d
 ./bin/worker -clientes /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/CLIENTES/CLIENTES.DBF
 
 
-## URL para pasarela de pagos BANREGIO
-curl -k -X POST https://testcolecto.banregio.com/adq/ \
+https://testcolecto.banregio.com/adq/  
+
+https://testhub.banregio.com/adq 
+
+## Solicita token
+curl -k -X POST https://testcolecto.banregio.com/adq \
+  -F "BNRG_ID_AFILIACION=8379502" \
+  -F "BNRG_ID_MEDIO=JCZSH8TV" \
+  -F "BNRG_NUMERO_TARJETA=4456530000001096" \
+  -F "BNRG_FECHA_EXP=1226" \
+  -F "BNRG_CODIGO_SEGURIDAD=123" \
+  -F "BNRG_FOLIO=FOLIO123456" \
+  -F "BNRG_HORA_LOCAL=094130" \
+  -F "BNRG_FECHA_LOCAL=20260604" \
+  -F "BNRG_MODO_ENTRADA=MANUAL" \
+  -F "BNRG_CMD_TRANS=CREACION_TOKEN"  
+
+## Genera la venta
+curl -k -X POST https://testcolecto.banregio.com/adq \
   -F "BNRG_ID_AFILIACION=8379502" \
   -F "BNRG_ID_MEDIO=JCZSH8TV" \
   -F "BNRG_NUMERO_TARJETA=4456530000001096" \
@@ -98,8 +115,28 @@ curl -k -X POST https://testcolecto.banregio.com/adq/ \
   -F "BNRG_FOLIO=FOLIO123456" \
   -F "BNRG_MODO_TRANS=AUT" \
   -F "BNRG_HORA_LOCAL=094130" \
-  -F "BNRG_FECHA_LOCAL=20260604" \
+  -F "BNRG_FECHA_LOCAL=09062026" \
+  -F BNRG_URL_RESPUESTA=https://kubo.orlandohdz.com.mx \
   -F "BNRG_MODO_ENTRADA=MANUAL" \
   -F "BNRG_CMD_TRANS=VENTA"
 
-  
+
+
+## Ejemplo de mi spy-webhook
+
+curl -X POST http://localhost:8080/api/v1/spy-webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_transaccion": "tx_987654321",
+    "estado": "aprobado",
+    "monto": 150.50,
+    "moneda": "MXN",
+    "metodo_pago": "tarjeta_credito",
+    "detalles": {
+      "marca": "Visa",
+      "ultimos_cuatro": "4242",
+      "codigo_autorizacion": "AUTH123"
+    },
+    "fecha_creacion": "2026-06-09T16:40:00Z"
+  }'
+

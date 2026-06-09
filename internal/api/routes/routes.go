@@ -29,6 +29,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 		v1.POST("/login", authHandler.Login)
 		v1.POST("/solicitud-registro", solicitudHandler.Crear)
 		v1.POST("/parse-csf", solicitudHandler.ParseCSF)
+		v1.POST("/spy-webhook", handlers.SpyWebhook)
 
 		// Productos (Públicos)
 		publicProductos := v1.Group("/productos")
