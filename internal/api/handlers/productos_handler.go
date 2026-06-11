@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
@@ -51,27 +55,61 @@ func (h *ProductosHandler) ObtenerPadre(c *gin.Context) {
 
 // CrearPadre registra un nuevo producto padre
 func (h *ProductosHandler) CrearPadre(c *gin.Context) {
-	var input struct {
-		NombreTecnico    string `json:"nombre_tecnico" binding:"required"`
-		Descripcion      string `json:"descripcion"`
-		Categoria        string `json:"categoria" binding:"required"`
-		Marca            string `json:"marca"`
-		DocumentacionUrl string `json:"documentacion_url"`
-		CreatedBy        int32  `json:"created_by"`
-	}
+	cveProdIntegracion := c.PostForm("cve_prod_integracion")
+	descripcion := c.PostForm("descripcion")
+	createdByStr := c.PostForm("created_by")
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de producto inválidos: " + err.Error()})
+	if descripcion == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La descripción es requerida"})
 		return
 	}
 
+	var createdBy int32
+	if createdByStr != "" {
+		val, err := strconv.Atoi(createdByStr)
+		if err == nil {
+			createdBy = int32(val)
+		}
+	}
+
+	var fotoUrl string
+	fotoFile, err := c.FormFile("foto")
+	if err == nil {
+		uploadDir := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fotoFile.Filename))
+			filePath := filepath.Join(uploadDir, filename)
+			if err := c.SaveUploadedFile(fotoFile, filePath); err == nil {
+				fotoUrl = "/uploads/productos/fotos/" + filename
+			}
+		}
+	}
+	if fotoUrl == "" {
+		fotoUrl = c.PostForm("foto_url")
+	}
+
+	var fichaTecnicaUrl string
+	fichaFile, err := c.FormFile("ficha_tecnica")
+	if err == nil {
+		uploadDir := "uploads/productos/fichas"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fichaFile.Filename))
+			filePath := filepath.Join(uploadDir, filename)
+			if err := c.SaveUploadedFile(fichaFile, filePath); err == nil {
+				fichaTecnicaUrl = "/uploads/productos/fichas/" + filename
+			}
+		}
+	}
+	if fichaTecnicaUrl == "" {
+		fichaTecnicaUrl = c.PostForm("ficha_tecnica")
+	}
+
 	producto, err := h.queries.CrearProductoPadre(c.Request.Context(), db.CrearProductoPadreParams{
-		NombreTecnico:    input.NombreTecnico,
-		Descripcion:      pgtype.Text{String: input.Descripcion, Valid: input.Descripcion != ""},
-		Categoria:        input.Categoria,
-		Marca:            pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
-		DocumentacionUrl: pgtype.Text{String: input.DocumentacionUrl, Valid: input.DocumentacionUrl != ""},
-		CreatedBy:        pgtype.Int4{Int32: input.CreatedBy, Valid: input.CreatedBy != 0},
+		CveProdIntegracion: pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
+		Descripcion:        pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		FotoUrl:            pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FichaTecnica:       pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
+		CreatedBy:          pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
 	})
 
 	if err != nil {
@@ -91,28 +129,62 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 		return
 	}
 
-	var input struct {
-		NombreTecnico    string `json:"nombre_tecnico" binding:"required"`
-		Descripcion      string `json:"descripcion"`
-		Categoria        string `json:"categoria" binding:"required"`
-		Marca            string `json:"marca"`
-		DocumentacionUrl string `json:"documentacion_url"`
-		UpdatedBy        int32  `json:"updated_by"`
-	}
+	cveProdIntegracion := c.PostForm("cve_prod_integracion")
+	descripcion := c.PostForm("descripcion")
+	updatedByStr := c.PostForm("updated_by")
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de actualización inválidos: " + err.Error()})
+	if descripcion == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La descripción es requerida"})
 		return
 	}
 
+	var updatedBy int32
+	if updatedByStr != "" {
+		val, err := strconv.Atoi(updatedByStr)
+		if err == nil {
+			updatedBy = int32(val)
+		}
+	}
+
+	var fotoUrl string
+	fotoFile, err := c.FormFile("foto")
+	if err == nil {
+		uploadDir := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fotoFile.Filename))
+			filePath := filepath.Join(uploadDir, filename)
+			if err := c.SaveUploadedFile(fotoFile, filePath); err == nil {
+				fotoUrl = "/uploads/productos/fotos/" + filename
+			}
+		}
+	}
+	if fotoUrl == "" {
+		fotoUrl = c.PostForm("foto_url")
+	}
+
+	var fichaTecnicaUrl string
+	fichaFile, err := c.FormFile("ficha_tecnica")
+	if err == nil {
+		uploadDir := "uploads/productos/fichas"
+		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fichaFile.Filename))
+			filePath := filepath.Join(uploadDir, filename)
+			if err := c.SaveUploadedFile(fichaFile, filePath); err == nil {
+				fichaTecnicaUrl = "/uploads/productos/fichas/" + filename
+			}
+		}
+	}
+	if fichaTecnicaUrl == "" {
+		fichaTecnicaUrl = c.PostForm("ficha_tecnica")
+	}
+
 	producto, err := h.queries.ActualizarProductoPadre(c.Request.Context(), db.ActualizarProductoPadreParams{
-		ID:               int32(id),
-		NombreTecnico:    input.NombreTecnico,
-		Descripcion:      pgtype.Text{String: input.Descripcion, Valid: input.Descripcion != ""},
-		Categoria:        input.Categoria,
-		Marca:            pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
-		DocumentacionUrl: pgtype.Text{String: input.DocumentacionUrl, Valid: input.DocumentacionUrl != ""},
-		UpdatedBy:        pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
+		ID:                 int32(id),
+		CveProdIntegracion: pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
+		Descripcion:        pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		FotoUrl:            pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FichaTecnica:       pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
+		UpdatedBy:          pgtype.Int4{Int32: updatedBy, Valid: updatedBy != 0},
 	})
 
 	if err != nil {
@@ -176,14 +248,21 @@ func (h *ProductosHandler) CrearVariante(c *gin.Context) {
 	}
 
 	var input struct {
-		Sku              string  `json:"sku" binding:"required"`
-		Medida           string  `json:"medida"`
-		PrecioLista      float64 `json:"precio_lista" binding:"required"`
-		StockActual      int32   `json:"stock_actual"`
-		UnidadMedida     string  `json:"unidad_medida" binding:"required"`
-		LeadTimeDias     int32   `json:"lead_time_dias"`
-		Especificaciones string  `json:"especificaciones"`
-		CreatedBy        int32   `json:"created_by"`
+		Sku                string  `json:"sku" binding:"required"`
+		Medida             string  `json:"medida"`
+		PrecioDistribuidor float64 `json:"precio_distribuidor" binding:"required"`
+		PrecioLista        float64 `json:"precio_lista" binding:"required"`
+		PrecioPublico      float64 `json:"precio_publico" binding:"required"`
+		StockActual        int32   `json:"stock_actual"`
+		UnidadMedida       string  `json:"unidad_medida" binding:"required"`
+		LeadTimeDias       int32   `json:"lead_time_dias"`
+		Especificaciones   string  `json:"especificaciones"`
+		Categoria          string  `json:"categoria"`
+		Subgrupo           string  `json:"subgrupo"`
+		Modelo             string  `json:"modelo"`
+		Tipo               string  `json:"tipo"`
+		Marca              string  `json:"marca"`
+		CreatedBy          int32   `json:"created_by"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -192,15 +271,22 @@ func (h *ProductosHandler) CrearVariante(c *gin.Context) {
 	}
 
 	variante, err := h.queries.CrearVariante(c.Request.Context(), db.CrearVarianteParams{
-		PadreID:      pgtype.Int4{Int32: int32(padreID), Valid: true},
-		Sku:              input.Sku,
-		Medida:           pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
-		PrecioLista:      utils.ToNumeric(input.PrecioLista),
-		StockActual:      input.StockActual,
-		UnidadMedida:     input.UnidadMedida,
-		LeadTimeDias:     pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
-		Especificaciones: pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},
-		CreatedBy:        pgtype.Int4{Int32: input.CreatedBy, Valid: input.CreatedBy != 0},
+		PadreID:            pgtype.Int4{Int32: int32(padreID), Valid: true},
+		Sku:                input.Sku,
+		Medida:             pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
+		PrecioDistribuidor: utils.ToNumeric(input.PrecioDistribuidor),
+		PrecioLista:        utils.ToNumeric(input.PrecioLista),
+		PrecioPublico:      utils.ToNumeric(input.PrecioPublico),
+		StockActual:        input.StockActual,
+		UnidadMedida:       input.UnidadMedida,
+		LeadTimeDias:       pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
+		Especificaciones:   pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},
+		Categoria:          pgtype.Text{String: input.Categoria, Valid: input.Categoria != ""},
+		Subgrupo:           pgtype.Text{String: input.Subgrupo, Valid: input.Subgrupo != ""},
+		Modelo:             pgtype.Text{String: input.Modelo, Valid: input.Modelo != ""},
+		Tipo:               pgtype.Text{String: input.Tipo, Valid: input.Tipo != ""},
+		Marca:              pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
+		CreatedBy:          pgtype.Int4{Int32: input.CreatedBy, Valid: input.CreatedBy != 0},
 	})
 
 	if err != nil {
@@ -254,14 +340,22 @@ func (h *ProductosHandler) ActualizarVariante(c *gin.Context) {
 	}
 
 	var input struct {
-		Sku              string  `json:"sku" binding:"required"`
-		Medida           string  `json:"medida"`
-		PrecioLista      float64 `json:"precio_lista" binding:"required"`
-		StockActual      int32   `json:"stock_actual"`
-		UnidadMedida     string  `json:"unidad_medida" binding:"required"`
-		LeadTimeDias     int32   `json:"lead_time_dias"`
-		Especificaciones string  `json:"especificaciones"`
-		UpdatedBy        int32   `json:"updated_by"`
+		PadreID            int32   `json:"padre_id"`
+		Sku                string  `json:"sku" binding:"required"`
+		Medida             string  `json:"medida"`
+		PrecioDistribuidor float64 `json:"precio_distribuidor" binding:"required"`
+		PrecioLista        float64 `json:"precio_lista" binding:"required"`
+		PrecioPublico      float64 `json:"precio_publico" binding:"required"`
+		StockActual        int32   `json:"stock_actual"`
+		UnidadMedida       string  `json:"unidad_medida" binding:"required"`
+		LeadTimeDias       int32   `json:"lead_time_dias"`
+		Especificaciones   string  `json:"especificaciones"`
+		Categoria          string  `json:"categoria"`
+		Subgrupo           string  `json:"subgrupo"`
+		Modelo             string  `json:"modelo"`
+		Tipo               string  `json:"tipo"`
+		Marca              string  `json:"marca"`
+		UpdatedBy          int32   `json:"updated_by"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -270,15 +364,23 @@ func (h *ProductosHandler) ActualizarVariante(c *gin.Context) {
 	}
 
 	variante, err := h.queries.ActualizarVariante(c.Request.Context(), db.ActualizarVarianteParams{
-		ID:               int32(id),
-		Sku:              input.Sku,
-		Medida:           pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
-		PrecioLista:      utils.ToNumeric(input.PrecioLista),
-		StockActual:      input.StockActual,
-		UnidadMedida:     input.UnidadMedida,
-		LeadTimeDias:     pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
-		Especificaciones: pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},
-		UpdatedBy:        pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
+		ID:                 int32(id),
+		PadreID:            pgtype.Int4{Int32: input.PadreID, Valid: input.PadreID != 0},
+		Sku:                input.Sku,
+		Medida:             pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
+		PrecioDistribuidor: utils.ToNumeric(input.PrecioDistribuidor),
+		PrecioLista:        utils.ToNumeric(input.PrecioLista),
+		PrecioPublico:      utils.ToNumeric(input.PrecioPublico),
+		StockActual:        input.StockActual,
+		UnidadMedida:       input.UnidadMedida,
+		LeadTimeDias:       pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
+		Especificaciones:   pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},
+		Categoria:          pgtype.Text{String: input.Categoria, Valid: input.Categoria != ""},
+		Subgrupo:           pgtype.Text{String: input.Subgrupo, Valid: input.Subgrupo != ""},
+		Modelo:             pgtype.Text{String: input.Modelo, Valid: input.Modelo != ""},
+		Tipo:               pgtype.Text{String: input.Tipo, Valid: input.Tipo != ""},
+		Marca:              pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
+		UpdatedBy:          pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
 	})
 
 	if err != nil {

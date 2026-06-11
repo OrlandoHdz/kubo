@@ -213,36 +213,42 @@ type ProductosIntegracion struct {
 }
 
 type ProductosPadre struct {
-	ID               int32            `json:"id"`
-	NombreTecnico    string           `json:"nombre_tecnico"`
-	Descripcion      pgtype.Text      `json:"descripcion"`
-	Categoria        string           `json:"categoria"`
-	Marca            pgtype.Text      `json:"marca"`
-	DocumentacionUrl pgtype.Text      `json:"documentacion_url"`
-	CreatedAt        pgtype.Timestamp `json:"created_at"`
-	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
-	DeletedAt        pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy        pgtype.Int4      `json:"created_by"`
-	UpdatedBy        pgtype.Int4      `json:"updated_by"`
-	DeletedBy        pgtype.Int4      `json:"deleted_by"`
+	ID                 int32            `json:"id"`
+	CveProdIntegracion pgtype.Text      `json:"cve_prod_integracion"`
+	Descripcion        pgtype.Text      `json:"descripcion"`
+	FotoUrl            pgtype.Text      `json:"foto_url"`
+	FichaTecnica       pgtype.Text      `json:"ficha_tecnica"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
+	DeletedAt          pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy          pgtype.Int4      `json:"created_by"`
+	UpdatedBy          pgtype.Int4      `json:"updated_by"`
+	DeletedBy          pgtype.Int4      `json:"deleted_by"`
 }
 
 type ProductosVariante struct {
-	ID               int32            `json:"id"`
-	PadreID          pgtype.Int4      `json:"padre_id"`
-	Sku              string           `json:"sku"`
-	Medida           pgtype.Text      `json:"medida"`
-	PrecioLista      pgtype.Numeric   `json:"precio_lista"`
-	StockActual      int32            `json:"stock_actual"`
-	UnidadMedida     string           `json:"unidad_medida"`
-	LeadTimeDias     pgtype.Int4      `json:"lead_time_dias"`
-	Especificaciones pgtype.Text      `json:"especificaciones"`
-	CreatedAt        pgtype.Timestamp `json:"created_at"`
-	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
-	DeletedAt        pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy        pgtype.Int4      `json:"created_by"`
-	UpdatedBy        pgtype.Int4      `json:"updated_by"`
-	DeletedBy        pgtype.Int4      `json:"deleted_by"`
+	ID                 int32            `json:"id"`
+	PadreID            pgtype.Int4      `json:"padre_id"`
+	Sku                string           `json:"sku"`
+	Medida             pgtype.Text      `json:"medida"`
+	PrecioDistribuidor pgtype.Numeric   `json:"precio_distribuidor"`
+	PrecioLista        pgtype.Numeric   `json:"precio_lista"`
+	PrecioPublico      pgtype.Numeric   `json:"precio_publico"`
+	StockActual        int32            `json:"stock_actual"`
+	UnidadMedida       string           `json:"unidad_medida"`
+	LeadTimeDias       pgtype.Int4      `json:"lead_time_dias"`
+	Especificaciones   pgtype.Text      `json:"especificaciones"`
+	Categoria          pgtype.Text      `json:"categoria"`
+	Subgrupo           pgtype.Text      `json:"subgrupo"`
+	Modelo             pgtype.Text      `json:"modelo"`
+	Tipo               pgtype.Text      `json:"tipo"`
+	Marca              pgtype.Text      `json:"marca"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
+	DeletedAt          pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy          pgtype.Int4      `json:"created_by"`
+	UpdatedBy          pgtype.Int4      `json:"updated_by"`
+	DeletedBy          pgtype.Int4      `json:"deleted_by"`
 }
 
 type SolicitudRegistroNuevoCliente struct {

@@ -521,37 +521,49 @@ func main() {
 	}
 
 	for _, p := range productosSemilla {
-		padre, err := queries.GetProductoPadreByNombre(ctx, p.Nombre)
+		// 1. Buscamos si existe. Aquí 'padre' es tipo db.GetProductoPadreByDescripcionRow
+		padre, err := queries.GetProductoPadreByDescripcion(ctx, pgtype.Text{String: p.Nombre, Valid: true})
+
+		var padreID int32 // Creamos una variable para estandarizar el ID que usarán las variantes
+
 		if err != nil {
-			padre, err = queries.CrearProductoPadre(ctx, db.CrearProductoPadreParams{
-				NombreTecnico: p.Nombre,
-				Descripcion:   pgtype.Text{String: p.Descripcion, Valid: p.Descripcion != ""},
-				Categoria:     p.Categoria,
-				Marca:         pgtype.Text{String: p.Marca, Valid: p.Marca != ""},
-				CreatedBy:     pgtype.Int4{Int32: admin.ID, Valid: true},
+			// ✨ SOLUCIÓN: Usamos `:=` para que 'nuevoPadre' tenga su propio tipo correcto (db.ProductosPadre)
+			nuevoPadre, err := queries.CrearProductoPadre(ctx, db.CrearProductoPadreParams{
+				CveProdIntegracion: pgtype.Text{Valid: false},
+				Descripcion:        pgtype.Text{String: p.Nombre, Valid: true},
+				FotoUrl:            pgtype.Text{Valid: false},
+				FichaTecnica:       pgtype.Text{String: p.Descripcion, Valid: p.Descripcion != ""},
+				CreatedBy:          pgtype.Int4{Int32: admin.ID, Valid: true},
 			})
 			if err != nil {
 				log.Printf("Error creando producto %s: %v", p.Nombre, err)
 				continue
 			}
+			padreID = nuevoPadre.ID // Asignamos el ID del recién creado
 			log.Println("Producto padre creado: ", p.Nombre)
 		} else {
+			padreID = padre.ID // Asignamos el ID del que ya existía en la BD
 			log.Println("Producto padre ya existe: ", p.Nombre)
 		}
 
+		// 2. Bucle de variantes
 		for _, v := range p.Variantes {
 			_, err := queries.GetVarianteBySKU(ctx, v.SKU)
 			if err != nil {
 				_, err = queries.CrearVariante(ctx, db.CrearVarianteParams{
-					PadreID:          pgtype.Int4{Int32: padre.ID, Valid: true},
-					Sku:              v.SKU,
-					Medida:           pgtype.Text{String: v.Medida, Valid: v.Medida != ""},
-					PrecioLista:      utils.ToNumeric(v.Precio),
-					StockActual:      v.Stock,
-					UnidadMedida:     "Pieza",
-					LeadTimeDias:     pgtype.Int4{Int32: 2, Valid: true},
-					Especificaciones: pgtype.Text{Valid: false},
-					CreatedBy:        pgtype.Int4{Int32: admin.ID, Valid: true},
+					PadreID:            pgtype.Int4{Int32: padreID, Valid: true}, // 😎 Usamos 'padreID' de forma segura
+					Sku:                v.SKU,
+					Medida:             pgtype.Text{String: v.Medida, Valid: v.Medida != ""},
+					PrecioDistribuidor: utils.ToNumeric(v.Precio),
+					PrecioLista:        utils.ToNumeric(v.Precio),
+					PrecioPublico:      utils.ToNumeric(v.Precio),
+					StockActual:        v.Stock,
+					UnidadMedida:       "Pieza",
+					LeadTimeDias:       pgtype.Int4{Int32: 2, Valid: true},
+					Especificaciones:   pgtype.Text{Valid: false},
+					Categoria:          pgtype.Text{String: p.Categoria, Valid: p.Categoria != ""},
+					Marca:              pgtype.Text{String: p.Marca, Valid: p.Marca != ""},
+					CreatedBy:          pgtype.Int4{Int32: admin.ID, Valid: true},
 				})
 				if err != nil {
 					log.Printf("  Error creando variante %s: %v", v.SKU, err)

@@ -6,38 +6,52 @@
 
 -- name: CrearProductoPadre :one
 INSERT INTO productos_padre (
-    nombre_tecnico, 
+    cve_prod_integracion, 
     descripcion, 
-    categoria, 
-    marca, 
-    documentacion_url, 
+    foto_url, 
+    ficha_tecnica, 
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, 
+    $2, 
+    $3, 
+    $4, 
+    $5
 ) RETURNING *;
 
 -- name: GetProductoPadre :one
-SELECT * FROM productos_padre 
-WHERE id = $1 AND deleted_at IS NULL LIMIT 1;
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
+       COALESCE(pi.cse_prod, '') AS categoria
+FROM productos_padre p
+LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
+WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1;
 
--- name: GetProductoPadreByNombre :one
-SELECT * FROM productos_padre 
-WHERE nombre_tecnico = $1 AND deleted_at IS NULL LIMIT 1;
+-- name: GetProductoPadreByDescripcion :one
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
+       COALESCE(pi.cse_prod, '') AS categoria
+FROM productos_padre p
+LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
+WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: ListarProductosPadre :many
-SELECT * FROM productos_padre 
-WHERE deleted_at IS NULL;
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
+       COALESCE(pi.cse_prod, '') AS categoria
+FROM productos_padre p
+LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
+WHERE p.deleted_at IS NULL;
 
 -- name: ActualizarProductoPadre :one
 UPDATE productos_padre
 SET 
-    nombre_tecnico = $2,
+    cve_prod_integracion = $2,
     descripcion = $3,
-    categoria = $4,
-    marca = $5,
-    documentacion_url = $6,
+    foto_url = $4,
+    ficha_tecnica = $5,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $7
+    updated_by = $6
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
@@ -56,17 +70,11 @@ WHERE id = $1;
 -- name: CrearVariante :one
 -- Registra una variante (ej. Tornillo de 1/2") ligada a un Padre (cite: 187, 191)
 INSERT INTO productos_variantes (
-    padre_id, 
-    sku, 
-    medida, 
-    precio_lista, 
-    stock_actual, 
-    unidad_medida, 
-    lead_time_dias, 
-    especificaciones,
-    created_by
+padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, 
+    stock_actual, unidad_medida, lead_time_dias, especificaciones, 
+    categoria, subgrupo, modelo, tipo, marca, created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
 ) RETURNING *;
 
 -- name: GetVarianteBySKU :one
@@ -94,15 +102,23 @@ WHERE id = $1;
 -- name: ActualizarVariante :one
 UPDATE productos_variantes
 SET 
-    sku = $2,
-    medida = $3,
-    precio_lista = $4,
-    stock_actual = $5,
-    unidad_medida = $6,
-    lead_time_dias = $7,
-    especificaciones = $8,
+    padre_id = $2,
+    sku = $3,
+    medida = $4,
+    precio_distribuidor = $5,
+    precio_lista = $6,
+    precio_publico = $7,
+    stock_actual = $8,
+    unidad_medida = $9,
+    lead_time_dias = $10,
+    especificaciones = $11,
+    categoria = $12,
+    subgrupo = $13,
+    modelo = $14,
+    tipo = $15,
+    marca = $16,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $9
+    updated_by = $17
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 

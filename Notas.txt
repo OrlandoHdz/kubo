@@ -155,3 +155,8 @@ curl -X POST https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook 
     },
     "fecha_creacion": "2026-06-09T16:40:00Z"
   }'
+
+
+## Se agrego la llave foreana a la tabla de productos con productos sai
+ALTER TABLE productos_padre 
+ADD COLUMN cve_prod_integracion VARCHAR(20) REFERENCES productos_integracion(cve_prod);
