@@ -9,7 +9,6 @@ import (
 )
 
 // SpyWebhook atrapa cualquier petición POST y registra sus encabezados y cuerpo en la consola.
-// Es útil para depurar qué datos envía una pasarela de pagos.
 func SpyWebhook(c *gin.Context) {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {

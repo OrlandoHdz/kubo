@@ -17,6 +17,8 @@ func main() {
 	clientesPath := flag.String("clientes", "", "Path to the CLIENTES DBF file")
 	facturasPath := flag.String("facturas", "", "Path to the FACTURAS DBF file")
 	existenciasPath := flag.String("existencias", "", "Path to the EXISTENCIAS DBF file")
+	creditosPath := flag.String("creditos", "", "Path to the CREDITOS DBF file")
+	productosPath := flag.String("productos", "", "Path to the PRODUCTOS DBF file")
 	flag.Parse()
 
 	// 1. Inicializar la conexión a la base de datos
@@ -31,6 +33,8 @@ func main() {
 	clienteService := services.NewClientesIntegracionService(queries)
 	existenciasService := services.NewExistenciasIntegracionService(queries)
 	facturaService := services.NewFacturasIntegracionService(queries)
+	creditosService := services.NewCreditosIntegracionService(queries)
+	productosService := services.NewProductosIntegracionService(queries)
 
 	// Track whether we performed any synchronization
 	synced := false
@@ -62,8 +66,26 @@ func main() {
 		synced = true
 	}
 
+	// 6. Sincronizar creditos si se provee la ruta
+	if *creditosPath != "" {
+		log.Printf("Iniciando sincronización de creditos desde: %s", *creditosPath)
+		if err := creditosService.SincronizarCreditosDesdeDBF(ctx, *creditosPath); err != nil {
+			log.Fatalf("Error al sincronizar creditos: %v", err)
+		}
+		synced = true
+	}
+
+	// 7. Sincronizar productos si se provee la ruta
+	if *productosPath != "" {
+		log.Printf("Iniciando sincronización de productos desde: %s", *productosPath)
+		if err := productosService.SincronizarProductosDesdeDBF(ctx, *productosPath); err != nil {
+			log.Fatalf("Error al sincronizar productos: %v", err)
+		}
+		synced = true
+	}
+
 	if !synced {
-		log.Fatalf("Se debe proporcionar al menos una de las rutas DBF mediante -clientes, -facturas o -existencias")
+		log.Fatalf("Se debe proporcionar al menos una de las rutas DBF mediante -clientes, -facturas, -existencias, -creditos o -productos")
 	}
 
 	log.Println("Sincronización completada exitosamente.")

@@ -116,14 +116,14 @@ curl -k -X POST https://testcolecto.banregio.com/adq \
   -F "BNRG_MODO_TRANS=AUT" \
   -F "BNRG_HORA_LOCAL=094130" \
   -F "BNRG_FECHA_LOCAL=09062026" \
-  -F BNRG_URL_RESPUESTA=https://kubo.orlandohdz.com.mx \
+  -F "BNRG_URL_RESPUESTA"=https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook \
   -F "BNRG_MODO_ENTRADA=MANUAL" \
   -F "BNRG_CMD_TRANS=VENTA"
 
 
 
 ## Ejemplo de mi spy-webhook
-
+#Local
 curl -X POST http://localhost:8080/api/v1/spy-webhook \
   -H "Content-Type: application/json" \
   -d '{
@@ -139,4 +139,19 @@ curl -X POST http://localhost:8080/api/v1/spy-webhook \
     },
     "fecha_creacion": "2026-06-09T16:40:00Z"
   }'
-
+#Alibaba
+curl -X POST https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_transaccion": "tx_987654321",
+    "estado": "aprobado",
+    "monto": 150.50,
+    "moneda": "MXN",
+    "metodo_pago": "tarjeta_credito",
+    "detalles": {
+      "marca": "Visa",
+      "ultimos_cuatro": "4242",
+      "codigo_autorizacion": "AUTH123"
+    },
+    "fecha_creacion": "2026-06-09T16:40:00Z"
+  }'

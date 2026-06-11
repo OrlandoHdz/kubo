@@ -53,6 +53,34 @@ type ClientesIntegracion struct {
 	EmailCte  pgtype.Text    `json:"email_cte"`
 }
 
+type CreditosIntegracion struct {
+	ID        int32            `json:"id"`
+	CveDda    pgtype.Text      `json:"cve_dda"`
+	NoNota    pgtype.Text      `json:"no_nota"`
+	TipNot    pgtype.Text      `json:"tip_not"`
+	Fecha     pgtype.Timestamp `json:"fecha"`
+	NoFac     pgtype.Text      `json:"no_fac"`
+	NoCliente pgtype.Int4      `json:"no_cliente"`
+	NoAgente  pgtype.Int4      `json:"no_agente"`
+	NoEstado  pgtype.Text      `json:"no_estado"`
+	TotImp    pgtype.Numeric   `json:"tot_imp"`
+	Subtotal  pgtype.Numeric   `json:"subtotal"`
+	DescNot   pgtype.Numeric   `json:"desc_not"`
+	TotNota   pgtype.Numeric   `json:"tot_nota"`
+	Num       pgtype.Int4      `json:"num"`
+	Saldo     pgtype.Numeric   `json:"saldo"`
+	TotDes    pgtype.Numeric   `json:"tot_des"`
+	Lugar     pgtype.Text      `json:"lugar"`
+	CveFactu  pgtype.Text      `json:"cve_factu"`
+	CveMon    pgtype.Int4      `json:"cve_mon"`
+	TipCam    pgtype.Numeric   `json:"tip_cam"`
+	CveSuc    pgtype.Text      `json:"cve_suc"`
+	Mes       pgtype.Text      `json:"mes"`
+	Aqo       pgtype.Text      `json:"aqo"`
+	Usuario   pgtype.Int4      `json:"usuario"`
+	Trans     pgtype.Int4      `json:"trans"`
+}
+
 type ExistenciasIntegracion struct {
 	ID         int32            `json:"id"`
 	CseProd    pgtype.Text      `json:"cse_prod"`
@@ -166,6 +194,22 @@ type PedidoDetalle struct {
 	CreatedBy              pgtype.Int4      `json:"created_by"`
 	UpdatedBy              pgtype.Int4      `json:"updated_by"`
 	DeletedBy              pgtype.Int4      `json:"deleted_by"`
+}
+
+type ProductosIntegracion struct {
+	ID        int32            `json:"id"`
+	CseProd   pgtype.Text      `json:"cse_prod"`
+	CveProd   pgtype.Text      `json:"cve_prod"`
+	NomProd   pgtype.Text      `json:"nom_prod"`
+	DescProd  pgtype.Text      `json:"desc_prod"`
+	UniMed    pgtype.Text      `json:"uni_med"`
+	UniMedP   pgtype.Text      `json:"uni_med_p"`
+	CostoProd pgtype.Numeric   `json:"costo_prod"`
+	FActCto   pgtype.Timestamp `json:"f_act_cto"`
+	FActPre   pgtype.Timestamp `json:"f_act_pre"`
+	CtoEnt    pgtype.Numeric   `json:"cto_ent"`
+	FecEnt    pgtype.Timestamp `json:"fec_ent"`
+	FecAnt    pgtype.Timestamp `json:"fec_ant"`
 }
 
 type ProductosPadre struct {

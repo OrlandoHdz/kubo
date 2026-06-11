@@ -15,6 +15,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 	clientesIntegracionHandler := handlers.NewClientesIntegracionHandler(queries)
 	facturasIntegracionHandler := handlers.NewFacturasIntegracionHandler(queries)
 	existenciasIntegracionHandler := handlers.NewExistenciasIntegracionHandler(queries)
+	creditosIntegracionHandler := handlers.NewCreditosIntegracionHandler(queries)
+	productosIntegracionHandler := handlers.NewProductosIntegracionHandler(queries)
 
 	// Servir archivos subidos estáticamente (ej. para que la URL /uploads/... devuelva el PDF)
 	r.Static("/uploads", "./uploads")
@@ -30,6 +32,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 		v1.POST("/solicitud-registro", solicitudHandler.Crear)
 		v1.POST("/parse-csf", solicitudHandler.ParseCSF)
 		v1.POST("/spy-webhook", handlers.SpyWebhook)
+		v1.GET("/spy-webhook", handlers.SpyWebhook)
 
 		// Productos (Públicos)
 		publicProductos := v1.Group("/productos")
@@ -89,6 +92,22 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			existenciasIntegracion.POST("", existenciasIntegracionHandler.Crear)
 			existenciasIntegracion.PUT("", existenciasIntegracionHandler.Upsert)
 		}
+
+		// Créditos Integración
+		creditosIntegracion := v1.Group("/creditos-integracion")
+		{
+			creditosIntegracion.GET("", creditosIntegracionHandler.Listar)
+			creditosIntegracion.GET("/:id", creditosIntegracionHandler.Obtener)
+			creditosIntegracion.POST("/", creditosIntegracionHandler.Crear)
+		}
+
+		// Productos Integración
+		productosIntegracion := v1.Group("/productos-integracion")
+		{
+			productosIntegracion.GET("", productosIntegracionHandler.Listar)
+			productosIntegracion.GET("/:id", productosIntegracionHandler.Obtener)
+			productosIntegracion.POST("/", productosIntegracionHandler.Crear)
+		}
 		// Productos (Privados - Gestión)
 		productos := v1.Group("/productos")
 		{
@@ -117,7 +136,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			pedidos.POST("", pedidosHandler.Crear)
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
 			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
-		pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
+			pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
 		}
 
 		// Clientes (Sistema Local)

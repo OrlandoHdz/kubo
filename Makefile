@@ -8,12 +8,14 @@ WORKER_PACKAGE=cmd/worker/main.go
 CLIENTES_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/CLIENTES/CLIENTES.DBF
 EXISTENCIAS_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/EXISTENCIAS/EXISTE.DBF
 FACTURAS_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/FACTURAS/facturac.DBF
+CREDITOS_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/CREDITOS/creditos.DBF
+PRODUCTOS_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/PRODUCTO/PRODUCTO.DBF
 
 # Colores para la terminal (opcional pero profesional)
 YELLOW=\033[0;33m
 NC=\033[0m
 
-.PHONY: build run seed test-db help sync-clients sync-existencias sync-facturas sqlc
+.PHONY: build run seed test-db help sync-clients sync-existencias sync-facturas sync-creditos sync-productos sqlc
 
 ## help: Muestra los comandos disponibles
 help:
@@ -63,3 +65,13 @@ sync-existencias:
 sync-facturas:
 	@echo "${YELLOW}Sincronizando facturas desde SAI ERP...${NC}"
 	go run $(WORKER_PACKAGE) -facturas $(FACTURAS_DBF)
+
+## sync-creditos: Sincronizar creditos desde el ERP SAI (DBF)
+sync-creditos:
+	@echo "${YELLOW}Sincronizando creditos desde SAI ERP...${NC}"
+	go run $(WORKER_PACKAGE) -creditos $(CREDITOS_DBF)
+
+## sync-productos: Sincronizar productos desde el ERP SAI (DBF)
+sync-productos:
+	@echo "${YELLOW}Sincronizando productos desde SAI ERP...${NC}"
+	go run $(WORKER_PACKAGE) -productos $(PRODUCTOS_DBF)
