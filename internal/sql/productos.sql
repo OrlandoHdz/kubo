@@ -21,24 +21,21 @@ INSERT INTO productos_padre (
 
 -- name: GetProductoPadre :one
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: GetProductoPadreByDescripcion :one
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: ListarProductosPadre :many
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.deleted_at IS NULL;

@@ -250,11 +250,11 @@ func (h *ProductosHandler) CrearVariante(c *gin.Context) {
 	var input struct {
 		Sku                string  `json:"sku" binding:"required"`
 		Medida             string  `json:"medida"`
-		PrecioDistribuidor float64 `json:"precio_distribuidor" binding:"required"`
-		PrecioLista        float64 `json:"precio_lista" binding:"required"`
-		PrecioPublico      float64 `json:"precio_publico" binding:"required"`
+		PrecioDistribuidor float64 `json:"precio_distribuidor" `
+		PrecioLista        float64 `json:"precio_lista" `
+		PrecioPublico      float64 `json:"precio_publico" `
 		StockActual        int32   `json:"stock_actual"`
-		UnidadMedida       string  `json:"unidad_medida" binding:"required"`
+		UnidadMedida       string  `json:"unidad_medida" `
 		LeadTimeDias       int32   `json:"lead_time_dias"`
 		Especificaciones   string  `json:"especificaciones"`
 		Categoria          string  `json:"categoria"`

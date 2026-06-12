@@ -310,8 +310,7 @@ func (q *Queries) CrearVariante(ctx context.Context, arg CrearVarianteParams) (P
 
 const getProductoPadre = `-- name: GetProductoPadre :one
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1
@@ -330,7 +329,6 @@ type GetProductoPadreRow struct {
 	UpdatedBy          pgtype.Int4      `json:"updated_by"`
 	DeletedBy          pgtype.Int4      `json:"deleted_by"`
 	NombreTecnico      string           `json:"nombre_tecnico"`
-	Categoria          string           `json:"categoria"`
 }
 
 func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPadreRow, error) {
@@ -349,15 +347,13 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.NombreTecnico,
-		&i.Categoria,
 	)
 	return i, err
 }
 
 const getProductoPadreByDescripcion = `-- name: GetProductoPadreByDescripcion :one
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1
@@ -376,7 +372,6 @@ type GetProductoPadreByDescripcionRow struct {
 	UpdatedBy          pgtype.Int4      `json:"updated_by"`
 	DeletedBy          pgtype.Int4      `json:"deleted_by"`
 	NombreTecnico      string           `json:"nombre_tecnico"`
-	Categoria          string           `json:"categoria"`
 }
 
 func (q *Queries) GetProductoPadreByDescripcion(ctx context.Context, descripcion pgtype.Text) (GetProductoPadreByDescripcionRow, error) {
@@ -395,7 +390,6 @@ func (q *Queries) GetProductoPadreByDescripcion(ctx context.Context, descripcion
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.NombreTecnico,
-		&i.Categoria,
 	)
 	return i, err
 }
@@ -472,8 +466,7 @@ func (q *Queries) GetVarianteBySKU(ctx context.Context, sku string) (ProductosVa
 
 const listarProductosPadre = `-- name: ListarProductosPadre :many
 SELECT p.id, p.cve_prod_integracion, p.descripcion, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
-       COALESCE(pi.nom_prod, '') AS nombre_tecnico, 
-       COALESCE(pi.cse_prod, '') AS categoria
+       COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.deleted_at IS NULL
@@ -492,7 +485,6 @@ type ListarProductosPadreRow struct {
 	UpdatedBy          pgtype.Int4      `json:"updated_by"`
 	DeletedBy          pgtype.Int4      `json:"deleted_by"`
 	NombreTecnico      string           `json:"nombre_tecnico"`
-	Categoria          string           `json:"categoria"`
 }
 
 func (q *Queries) ListarProductosPadre(ctx context.Context) ([]ListarProductosPadreRow, error) {
@@ -517,7 +509,6 @@ func (q *Queries) ListarProductosPadre(ctx context.Context) ([]ListarProductosPa
 			&i.UpdatedBy,
 			&i.DeletedBy,
 			&i.NombreTecnico,
-			&i.Categoria,
 		); err != nil {
 			return nil, err
 		}
