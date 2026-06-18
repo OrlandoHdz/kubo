@@ -10,6 +10,8 @@ CREATE TABLE pedidos (
     iva DECIMAL(12, 2) NOT NULL,
     total_orden DECIMAL(12, 2) NOT NULL, 
     es_backorder BOOLEAN DEFAULT FALSE, 
+    guia VARCHAR(100) DEFAULT '',
+    notas_admin VARCHAR(250) DEFAULT '',
     fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- Campos de Auditoría

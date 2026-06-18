@@ -4,6 +4,7 @@ CREATE TABLE productos_padre (
     descripcion VARCHAR(200),
     foto_url TEXT,
     ficha_tecnica TEXT, -- Para PDFs y Hojas de Seguridad [cite: 149]
+    descripcion_extendida TEXT,
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -27,11 +28,13 @@ CREATE TABLE productos_variantes (
     unidad_medida VARCHAR(50) NOT NULL DEFAULT 'Pza', -- [cite: 261]
     lead_time_dias INTEGER DEFAULT 2, -- [cite: 162]
     especificaciones VARCHAR(50),
+    multiplos INTEGER DEFAULT 1,
     categoria VARCHAR(50),
     subgrupo VARCHAR(50),
     modelo VARCHAR(50),
     tipo VARCHAR(50),
     marca VARCHAR(50),
+    permitir_backorder BOOLEAN DEFAULT TRUE,
     
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

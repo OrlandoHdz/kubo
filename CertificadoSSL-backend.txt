@@ -51,6 +51,9 @@ server {
     listen 443 ssl;
     server_name api.pruebas-arsenal.almacendigital.work;
 
+    # Permite hasta 100 MB para subir archivos como fotos y pdfs
+    client_max_body_size 100M;    
+
     # Rutas a los certificados gestionados por acme.sh
     ssl_certificate /home/ecs-user/certificados/cert.pem;
     ssl_certificate_key /home/ecs-user/certificados/key.pem;

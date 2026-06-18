@@ -24,6 +24,7 @@ func main() {
 
 	// 2. Setup Server
 	r := gin.Default()
+	r.MaxMultipartMemory = 100 << 20 // 100 MB
 
 	// Configuración de CORS simplificada y abierta para desarrollo
 	r.Use(cors.New(cors.Config{

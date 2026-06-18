@@ -1,45 +1,54 @@
 # ==========================================
 # ETAPA 1: Construcción (Builder)
 # ==========================================
-# Usamos la imagen oficial de Go (ligera) para compilar
 FROM golang:1.26.2-alpine AS builder
 
-# Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Descargamos las dependencias primero (esto optimiza el caché de Docker)
+# Descargamos dependencias primero para optimizar caché
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copiamos todo el código fuente
+# Copiamos el código fuente
 COPY . .
 
-# Compilamos el binario. 
-# CGO_ENABLED=0 es CRUCIAL para que el binario funcione en contenedores vacíos sin requerir librerías de C.
-# GOOS=linux asegura que se compile para el sistema operativo del contenedor.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubo-api ./cmd/api/main.go 
+# Compilamos el binario estático
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o kubo-api ./cmd/api/main.go 
 
 # ==========================================
-# ETAPA 2: Imagen Final de Producción
+# ETAPA 2: Imagen Final de Production
 # ==========================================
-# Usamos 'alpine' que pesa solo ~5MB. (También podrías usar 'scratch' que pesa 0MB)
-FROM alpine:latest
+FROM alpine:3.19
 
-# Añadimos certificados raíz, zonas horarias y poppler-utils para el parseo de PDF
-RUN apk --no-cache add ca-certificates tzdata poppler-utils
+# Instalar dependencias necesarias y limpiar caché de apk
+RUN apk --no-cache add ca-certificates tzdata poppler-utils \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# 1. Copiamos el binario compilado desde la ETAPA 1
+# Copiamos el binario desde la etapa de construcción
 COPY --from=builder /app/kubo-api .
 
-# 2. Copiamos tu archivo de configuración manteniendo la estructura de carpetas
-# Asegúrate de crear la carpeta de destino en el contenedor
-RUN mkdir -p configs/db
+# Copiamos la configuración
 COPY configs/db/database.yaml ./configs/db/
 
-# Exponemos el puerto que usa tu API (ejemplo: 8080)
+# --- CONFIGURACIÓN DE VOLUMEN Y USUARIO ---
+# Creamos el usuario sin privilegios
+RUN adduser -D -u 10001 appuser
+
+# 1. 👇 REGLA DE ORO: Asegurar que el usuario pueda escribir archivos temporales grandes
+RUN chown -R appuser:appuser /tmp
+
+# 2. Creamos la carpeta de subidas y le asignamos la propiedad al appuser
+# Esto garantiza que tu API de Go pueda escribir, leer y borrar archivos ahí dentro.
+RUN mkdir -p uploads && chown -R appuser:appuser /app/uploads
+
+# 3. Declaramos formalmente la carpeta como un volumen
+VOLUME ["/app/uploads"]
+
+# Cambiamos al usuario seguro para la ejecución
+USER appuser
+
 EXPOSE 8080
 
-# Comando para arrancar la aplicación
 CMD ["./kubo-api"]

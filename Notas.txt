@@ -59,11 +59,31 @@ scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey
 ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
 
 ## Ejecutamos la imagen
-docker load -i kubo-api.tar
+sudo docker load -i kubo-api.tar
+
 ## Detener el anterior container
 sudo docker stop <CONTAINER_ID>
-## Levantar el nuevo container
-docker run -d -p 8080:8080 kubo-api:v1
+
+
+## Levanta el nuevo container con volumenes
+sudo docker run -d \
+  -p 8080:8080 \
+  -v /home/ecs-user/uploads:/app/uploads \
+  --name kubo-api-container \
+  kubo-api:v1
+
+
+###### IMPORTANTE #######
+Se tuvo problemas con la carpeta de uploads en el servidor para que se subieran la imagen por permisos
+ya se esta creando un usuario en el Dockerfile con el id 10001 al cual se le tiene que dar permisos de
+lectura y escritura en la carpeta de uploads
+
+# Cambia la propiedad de la carpeta del host al UID que usa tu contenedor
+sudo chown -R 10001:10001 /home/ecs-user/uploads
+
+# Dale permisos de lectura y escritura
+sudo chmod -R 775 /home/ecs-user/uploads
+
 
 
 ## Probar la api
@@ -156,7 +176,16 @@ curl -X POST https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook 
     "fecha_creacion": "2026-06-09T16:40:00Z"
   }'
 
+# Correr opencode
+npx opencode-ai --port 37217
 
 ## Se agrego la llave foreana a la tabla de productos con productos sai
 ALTER TABLE productos_padre 
 ADD COLUMN cve_prod_integracion VARCHAR(20) REFERENCES productos_integracion(cve_prod);
+
+
+## Sacar un respaldo de la base de datos
+sudo docker exec -t kubo-db pg_dump -U ukubo -d kubo_db > /home/ecs-user/respaldo_kubo_db.sql
+Esta es la contraseña: kubo.W.3789K
+psql -U postgres -d kubo_db -f respaldo_kubo_db.sql
+

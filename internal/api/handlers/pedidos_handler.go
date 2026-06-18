@@ -42,6 +42,24 @@ type CrearPedidoInput struct {
 	Items      []PedidoDetalleInput `json:"items" binding:"required,min=1"`
 }
 
+func (h *PedidosHandler) validarVentanaModificacion(c *gin.Context, pedidoID int32) bool {
+	rol, _ := c.Get("userRol")
+	if rol == "Admin" {
+		return true
+	}
+
+	dentro, err := h.queries.PedidoDentroVentanaModificacion(c.Request.Context(), pedidoID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al validar ventana de modificación: " + err.Error()})
+		return false
+	}
+	if !dentro {
+		c.JSON(http.StatusForbidden, gin.H{"error": "El plazo para modificar este pedido ha vencido"})
+		return false
+	}
+	return true
+}
+
 func (h *PedidosHandler) Crear(c *gin.Context) {
 	var input CrearPedidoInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -101,27 +119,25 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 	// 3. Validar Disponibilidad de Stock (tomando en cuenta pedidos en proceso)
 	esBackorder := false
 	for _, item := range input.Items {
-		variante, err := qtx.GetVariante(c.Request.Context(), item.VarianteID)
+		stockReal, err := qtx.GetStockRealVariante(c.Request.Context(), item.VarianteID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Variante %d no encontrada", item.VarianteID)})
-			return
+			stockReal = pgtype.Numeric{}
 		}
+		stockRealFloat, _ := utils.NumericToFloat64(stockReal)
 
 		committed, err := qtx.GetCommittedStock(c.Request.Context(), pgtype.Int4{Int32: item.VarianteID, Valid: true})
 		if err != nil {
-			committed = 0 // Si hay error, asumimos 0 para no bloquear, o podrías manejarlo
+			committed = 0
 		}
 
-		disponible := variante.StockActual - committed
+		disponible := int32(stockRealFloat) - committed
 		if disponible < item.Cantidad {
 			esBackorder = true
-			// Aquí podrías decidir si bloquear la venta o solo marcar como backorder
-			// El usuario pidió "indicar que no tenemos en stock"
 		}
 	}
 
 	// 4. Generar Folio
-	folio := fmt.Sprintf("PED-%d", time.Now().Unix())
+	folio := fmt.Sprintf("ARW-%d", time.Now().Unix())
 
 	// 5. Crear Encabezado de Pedido
 	pedido, err := qtx.CrearPedido(c.Request.Context(), db.CrearPedidoParams{
@@ -228,8 +244,10 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 	}
 
 	var input struct {
-		Estado    string `json:"estado" binding:"required"`
-		UpdatedBy int32  `json:"updated_by"`
+		Estado      string `json:"estado" binding:"required"`
+		Guia        string `json:"guia"`
+		NotasAdmin  string `json:"notas_admin"`
+		UpdatedBy   int32  `json:"updated_by"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -237,10 +255,16 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 		return
 	}
 
-	pedido, err := h.queries.ActualizarEstadoPedido(c.Request.Context(), db.ActualizarEstadoPedidoParams{
-		ID:        int32(id),
-		Estado:    input.Estado,
-		UpdatedBy: pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
+	if !h.validarVentanaModificacion(c, int32(id)) {
+		return
+	}
+
+	pedidoActualizado, err := h.queries.ActualizarEstadoPedido(c.Request.Context(), db.ActualizarEstadoPedidoParams{
+		ID:         int32(id),
+		Estado:     input.Estado,
+		Guia:       pgtype.Text{String: input.Guia, Valid: input.Guia != ""},
+		NotasAdmin: pgtype.Text{String: input.NotasAdmin, Valid: input.NotasAdmin != ""},
+		UpdatedBy:  pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
 	})
 
 	if err != nil {
@@ -248,7 +272,7 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pedido)
+	c.JSON(http.StatusOK, pedidoActualizado)
 }
 
 func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
@@ -273,14 +297,8 @@ func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Solo se pueden agregar productos a pedidos pendientes"})
 		return
 	}
-	// Check time window (same logic as puedeModificar)
-	createdAt := pedido.CreatedAt.Time
-	if pedido.FechaPedido.Valid {
-		createdAt = pedido.FechaPedido.Time
-	}
-	diffHoras := time.Since(createdAt).Hours()
-	if diffHoras >= 2 {
-		c.JSON(http.StatusForbidden, gin.H{"error": "El plazo para modificar este pedido ha vencido"})
+
+	if !h.validarVentanaModificacion(c, int32(pedidoID)) {
 		return
 	}
 
@@ -296,14 +314,15 @@ func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
 	// Insert each item as detalle
 	var addedSubtotal float64
 	for _, item := range input.Items {
-		// Validate stock (similar to Crear)
-		variante, err := qtx.GetVariante(c.Request.Context(), item.VarianteID)
+		// Validate stock from existencias_integracion
+		stockReal, err := qtx.GetStockRealVariante(c.Request.Context(), item.VarianteID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Variante %d no encontrada", item.VarianteID)})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al obtener stock real para variante %d: %s", item.VarianteID, err.Error())})
 			return
 		}
+		stockRealFloat, _ := utils.NumericToFloat64(stockReal)
 		committed, _ := qtx.GetCommittedStock(c.Request.Context(), pgtype.Int4{Int32: item.VarianteID, Valid: true})
-		disponible := variante.StockActual - committed
+		disponible := int32(stockRealFloat) - committed
 		if disponible < item.Cantidad {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Stock insuficiente para variante %d", item.VarianteID)})
 			return
@@ -364,6 +383,10 @@ func (h *PedidosHandler) CancelarDetalle(c *gin.Context) {
 	pedido, err := h.queries.GetPedido(c.Request.Context(), int32(pedidoID))
 	if err != nil || pedido.Estado != "Pendiente" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "No se puede cancelar el detalle de este pedido"})
+		return
+	}
+
+	if !h.validarVentanaModificacion(c, int32(pedidoID)) {
 		return
 	}
 

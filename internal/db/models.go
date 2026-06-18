@@ -173,6 +173,8 @@ type Pedido struct {
 	Iva         pgtype.Numeric   `json:"iva"`
 	TotalOrden  pgtype.Numeric   `json:"total_orden"`
 	EsBackorder pgtype.Bool      `json:"es_backorder"`
+	Guia        pgtype.Text      `json:"guia"`
+	NotasAdmin  pgtype.Text      `json:"notas_admin"`
 	FechaPedido pgtype.Timestamp `json:"fecha_pedido"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
@@ -213,17 +215,18 @@ type ProductosIntegracion struct {
 }
 
 type ProductosPadre struct {
-	ID                 int32            `json:"id"`
-	CveProdIntegracion pgtype.Text      `json:"cve_prod_integracion"`
-	Descripcion        pgtype.Text      `json:"descripcion"`
-	FotoUrl            pgtype.Text      `json:"foto_url"`
-	FichaTecnica       pgtype.Text      `json:"ficha_tecnica"`
-	CreatedAt          pgtype.Timestamp `json:"created_at"`
-	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
-	DeletedAt          pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy          pgtype.Int4      `json:"created_by"`
-	UpdatedBy          pgtype.Int4      `json:"updated_by"`
-	DeletedBy          pgtype.Int4      `json:"deleted_by"`
+	ID                   int32            `json:"id"`
+	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Descripcion          pgtype.Text      `json:"descripcion"`
+	FotoUrl              pgtype.Text      `json:"foto_url"`
+	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
+	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
+	DeletedAt            pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy            pgtype.Int4      `json:"created_by"`
+	UpdatedBy            pgtype.Int4      `json:"updated_by"`
+	DeletedBy            pgtype.Int4      `json:"deleted_by"`
 }
 
 type ProductosVariante struct {
@@ -238,11 +241,13 @@ type ProductosVariante struct {
 	UnidadMedida       string           `json:"unidad_medida"`
 	LeadTimeDias       pgtype.Int4      `json:"lead_time_dias"`
 	Especificaciones   pgtype.Text      `json:"especificaciones"`
+	Multiplos          pgtype.Int4      `json:"multiplos"`
 	Categoria          pgtype.Text      `json:"categoria"`
 	Subgrupo           pgtype.Text      `json:"subgrupo"`
 	Modelo             pgtype.Text      `json:"modelo"`
 	Tipo               pgtype.Text      `json:"tipo"`
 	Marca              pgtype.Text      `json:"marca"`
+	PermitirBackorder  pgtype.Bool      `json:"permitir_backorder"`
 	CreatedAt          pgtype.Timestamp `json:"created_at"`
 	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
 	DeletedAt          pgtype.Timestamp `json:"deleted_at"`

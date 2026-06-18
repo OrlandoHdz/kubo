@@ -1,0 +1,10 @@
+#Agregar campo de descripcion_extendida de tipo TEXT en la tabla de productos_padre
+ALTER TABLE productos_padre ADD COLUMN descripcion_extendida TEXT;
+
+#Agregar campo de multiplos de tipo INTEGER en la tabla de productos_variantes
+ALTER TABLE productos_variantes ADD COLUMN multiplos INTEGER DEFAULT 1;
+
+
+#Agregar campo de permitir_backorder de tipo BOOLEAN en la tabla de productos_variantes
+ALTER TABLE productos_variantes ADD COLUMN permitir_backorder BOOLEAN DEFAULT TRUE;
+

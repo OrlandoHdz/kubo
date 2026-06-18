@@ -57,6 +57,7 @@ func (h *ProductosHandler) ObtenerPadre(c *gin.Context) {
 func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 	cveProdIntegracion := c.PostForm("cve_prod_integracion")
 	descripcion := c.PostForm("descripcion")
+	descripcionExtendida := c.PostForm("descripcion_extendida")
 	createdByStr := c.PostForm("created_by")
 
 	if descripcion == "" {
@@ -105,11 +106,12 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 	}
 
 	producto, err := h.queries.CrearProductoPadre(c.Request.Context(), db.CrearProductoPadreParams{
-		CveProdIntegracion: pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
-		Descripcion:        pgtype.Text{String: descripcion, Valid: descripcion != ""},
-		FotoUrl:            pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
-		FichaTecnica:       pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
-		CreatedBy:          pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
+		CveProdIntegracion:   pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
+		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
+		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
+		CreatedBy:            pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
 	})
 
 	if err != nil {
@@ -131,6 +133,7 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 
 	cveProdIntegracion := c.PostForm("cve_prod_integracion")
 	descripcion := c.PostForm("descripcion")
+	descripcionExtendida := c.PostForm("descripcion_extendida")
 	updatedByStr := c.PostForm("updated_by")
 
 	if descripcion == "" {
@@ -179,12 +182,13 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 	}
 
 	producto, err := h.queries.ActualizarProductoPadre(c.Request.Context(), db.ActualizarProductoPadreParams{
-		ID:                 int32(id),
-		CveProdIntegracion: pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
-		Descripcion:        pgtype.Text{String: descripcion, Valid: descripcion != ""},
-		FotoUrl:            pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
-		FichaTecnica:       pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
-		UpdatedBy:          pgtype.Int4{Int32: updatedBy, Valid: updatedBy != 0},
+		ID:                   int32(id),
+		CveProdIntegracion:   pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
+		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
+		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
+		UpdatedBy:            pgtype.Int4{Int32: updatedBy, Valid: updatedBy != 0},
 	})
 
 	if err != nil {
@@ -262,6 +266,8 @@ func (h *ProductosHandler) CrearVariante(c *gin.Context) {
 		Modelo             string  `json:"modelo"`
 		Tipo               string  `json:"tipo"`
 		Marca              string  `json:"marca"`
+		Multipos           int32   `json:"multiplos"`
+		PermitirBackorder  bool    `json:"permitir_backorder"`
 		CreatedBy          int32   `json:"created_by"`
 	}
 
@@ -286,6 +292,8 @@ func (h *ProductosHandler) CrearVariante(c *gin.Context) {
 		Modelo:             pgtype.Text{String: input.Modelo, Valid: input.Modelo != ""},
 		Tipo:               pgtype.Text{String: input.Tipo, Valid: input.Tipo != ""},
 		Marca:              pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
+		Multiplos:          pgtype.Int4{Int32: input.Multipos, Valid: true},
+		PermitirBackorder:  pgtype.Bool{Bool: input.PermitirBackorder, Valid: true},
 		CreatedBy:          pgtype.Int4{Int32: input.CreatedBy, Valid: input.CreatedBy != 0},
 	})
 
@@ -355,6 +363,8 @@ func (h *ProductosHandler) ActualizarVariante(c *gin.Context) {
 		Modelo             string  `json:"modelo"`
 		Tipo               string  `json:"tipo"`
 		Marca              string  `json:"marca"`
+		Multipos           int32   `json:"multiplos"`
+		PermitirBackorder  bool    `json:"permitir_backorder"`
 		UpdatedBy          int32   `json:"updated_by"`
 	}
 
@@ -380,6 +390,8 @@ func (h *ProductosHandler) ActualizarVariante(c *gin.Context) {
 		Modelo:             pgtype.Text{String: input.Modelo, Valid: input.Modelo != ""},
 		Tipo:               pgtype.Text{String: input.Tipo, Valid: input.Tipo != ""},
 		Marca:              pgtype.Text{String: input.Marca, Valid: input.Marca != ""},
+		Multiplos:          pgtype.Int4{Int32: input.Multipos, Valid: true},
+		PermitirBackorder:  pgtype.Bool{Bool: input.PermitirBackorder, Valid: true},
 		UpdatedBy:          pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
 	})
 

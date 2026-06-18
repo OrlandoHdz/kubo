@@ -6,6 +6,7 @@ services:
     container_name: kubo-db
     restart: always
     environment:
+      TZ: America/Monterrey
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: kw29zxu12001
       POSTGRES_DB: kubo-db
