@@ -8,3 +8,12 @@ ALTER TABLE productos_variantes ADD COLUMN multiplos INTEGER DEFAULT 1;
 #Agregar campo de permitir_backorder de tipo BOOLEAN en la tabla de productos_variantes
 ALTER TABLE productos_variantes ADD COLUMN permitir_backorder BOOLEAN DEFAULT TRUE;
 
+
+#Para manejar backorder
+ALTER TABLE pedido_detalles 
+ADD COLUMN tipo_registro TEXT NOT NULL DEFAULT 'Normal', -- 'Normal' o 'Backorder';
+
+ALTER TABLE pedidos
+ADD COLUMN guia_backorder VARCHAR(100) DEFAULT '';
+ADD COLUMN notas_admin_backorder VARCHAR(250) DEFAULT '';
+ADD COLUMN estado_backorder VARCHAR(20) NOT NULL DEFAULT 'Pendiente';

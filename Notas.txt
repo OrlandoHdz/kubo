@@ -189,3 +189,18 @@ sudo docker exec -t kubo-db pg_dump -U ukubo -d kubo_db > /home/ecs-user/respald
 Esta es la contraseña: kubo.W.3789K
 psql -U postgres -d kubo_db -f respaldo_kubo_db.sql
 
+
+
+
+curl --location --request PATCH 'https://api.pruebas-arsenal.almacendigital.work/api/v1/productos/34' \
+--header 'Accept: application/json, text/plain, */*' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX2lkIjoxLCJlbWFpbCI6Im9ybGFuZG8uaGR6QGdtYWlsLmNvbSIsInJvbCI6IkFkbWluIiwiZXhwIjoxNzgxNzcyODY3LCJpYXQiOjE3ODE3NjIwNjd9.22bKKlXPDvZGycK5eGphT8wtnRFVtJE99UZcVfof8lk' \
+--form 'cve_prod_integracion="AR-DM250"' \
+--form 'descripcion="DIFUSOR DM250 T/MILLER ARW"' \
+--form 'descripcion_extendida="Esto es una prueba"' \
+--form 'foto_url="/uploads/productos/fotos/178129733_AR-DM250.jpg"' \
+--form 'ficha_tecnica="/uploads/productos/fichas/178129733_Ficha_Tecnica_Difusor_DM250_T-MILLER_ARW.pdf"' \
+--form 'created_by="1"' \
+--form 'updated_by="1"' \
+--form 'foto=@"/Users/orlando/Downloads/DISENOFOTOSPAGINAWEB.jpg"' \
+--form 'ficha_tecnica=@"/Users/orlando/Downloads/Ficha_Tecnica_Difusor_DM250_T-MILLER_ARW.pdf"'
