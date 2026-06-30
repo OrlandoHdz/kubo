@@ -24,6 +24,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 	clientesHandler := handlers.NewClientesHandler(queries)
 	productosHandler := handlers.NewProductosHandler(queries)
 	pedidosHandler := handlers.NewPedidosHandler(queries, pool)
+	pagosTarjetaHandler := handlers.NewPagosTarjetaHandler(queries)
+	spyWebhookHandler := handlers.NewSpyWebhookHandler(queries)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -31,8 +33,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 		v1.POST("/login", authHandler.Login)
 		v1.POST("/solicitud-registro", solicitudHandler.Crear)
 		v1.POST("/parse-csf", solicitudHandler.ParseCSF)
-		v1.POST("/spy-webhook", handlers.SpyWebhook)
-		v1.GET("/spy-webhook", handlers.SpyWebhook)
+		v1.POST("/spy-webhook", spyWebhookHandler.SpyWebhook)
+		v1.GET("/spy-webhook", spyWebhookHandler.SpyWebhook)
 
 		// Productos (Públicos)
 		publicProductos := v1.Group("/productos")
@@ -127,6 +129,16 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			variantes.DELETE("/:id", productosHandler.EliminarVariante)
 		}
 
+		// Pagos Tarjeta (Transacciones BanRegio)
+		pagosTarjeta := v1.Group("/pagos-tarjeta")
+		{
+			pagosTarjeta.GET("", pagosTarjetaHandler.Listar)
+			pagosTarjeta.GET("/:id", pagosTarjetaHandler.Obtener)
+			pagosTarjeta.GET("/cliente/:cliente_id", pagosTarjetaHandler.ListarPorCliente)
+			pagosTarjeta.POST("", pagosTarjetaHandler.Crear)
+			pagosTarjeta.DELETE("/:id", pagosTarjetaHandler.Eliminar)
+		}
+
 		// Pedidos
 		pedidos := v1.Group("/pedidos")
 		{
@@ -135,6 +147,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			pedidos.GET("/cliente/:cliente_id", pedidosHandler.ListarPorCliente)
 			pedidos.POST("", pedidosHandler.Crear)
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
+			pedidos.PATCH("/:id/backorder", pedidosHandler.ActualizarBackorder)
 			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
 			pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
 		}

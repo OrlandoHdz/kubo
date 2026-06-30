@@ -117,6 +117,14 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 	}
 
 	// 3. Validar Disponibilidad de Stock (tomando en cuenta pedidos en proceso)
+	type itemStockInfo struct {
+		VarianteID int32
+		Cantidad   int32
+		Precio     float64
+		Disponible int32
+	}
+
+	var itemsStock []itemStockInfo
 	esBackorder := false
 	for _, item := range input.Items {
 		stockReal, err := qtx.GetStockRealVariante(c.Request.Context(), item.VarianteID)
@@ -134,45 +142,87 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 		if disponible < item.Cantidad {
 			esBackorder = true
 		}
+		itemsStock = append(itemsStock, itemStockInfo{
+			VarianteID: item.VarianteID,
+			Cantidad:   item.Cantidad,
+			Precio:     item.Precio,
+			Disponible: disponible,
+		})
 	}
 
 	// 4. Generar Folio
 	folio := fmt.Sprintf("ARW-%d", time.Now().Unix())
 
 	// 5. Crear Encabezado de Pedido
+	estadoBackorder := ""
+	if esBackorder {
+		estadoBackorder = "Pendiente"
+	}
 	pedido, err := qtx.CrearPedido(c.Request.Context(), db.CrearPedidoParams{
-		Folio:       folio,
-		ClienteID:   pgtype.Int4{Int32: input.ClienteID, Valid: true},
-		UsuarioID:   pgtype.Int4{Int32: input.UsuarioID, Valid: true},
-		Estado:      "Pendiente",
-		MetodoPago:  input.MetodoPago,
-		Subtotal:    utils.ToNumeric(input.Subtotal),
-		Iva:         utils.ToNumeric(input.Iva),
-		TotalOrden:  utils.ToNumeric(input.TotalOrden),
-		EsBackorder: pgtype.Bool{Bool: esBackorder, Valid: true},
-		CreatedBy:   pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+		Folio:               folio,
+		ClienteID:           pgtype.Int4{Int32: input.ClienteID, Valid: true},
+		UsuarioID:           pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+		Estado:              "Pendiente",
+		MetodoPago:          input.MetodoPago,
+		Subtotal:            utils.ToNumeric(input.Subtotal),
+		Iva:                 utils.ToNumeric(input.Iva),
+		TotalOrden:          utils.ToNumeric(input.TotalOrden),
+		EsBackorder:         pgtype.Bool{Bool: esBackorder, Valid: true},
+		GuiaBackorder:       pgtype.Text{String: "", Valid: false},
+		NotasAdminBackorder: pgtype.Text{String: "", Valid: false},
+		EstadoBackorder:     estadoBackorder,
+		CreatedBy:           pgtype.Int4{Int32: input.UsuarioID, Valid: true},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear encabezado de pedido: " + err.Error()})
 		return
 	}
 
-	// 4. Crear Detalles
-	for _, item := range input.Items {
-		_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
-			PedidoID:               pgtype.Int4{Int32: pedido.ID, Valid: true},
-			VarianteID:             pgtype.Int4{Int32: item.VarianteID, Valid: true},
-			Cantidad:               item.Cantidad,
-			PrecioUnitarioAplicado: utils.ToNumeric(item.Precio),
-			CreatedBy:              pgtype.Int4{Int32: input.UsuarioID, Valid: true},
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle para variante %d: %s", item.VarianteID, err.Error())})
-			return
+	// 5. Crear Detalles (splitteando en Normal + Backorder según stock disponible)
+	for _, is := range itemsStock {
+		if is.Disponible >= is.Cantidad {
+			// Stock suficiente: un solo detalle Normal
+			_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+				PedidoID:               pgtype.Int4{Int32: pedido.ID, Valid: true},
+				VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+				Cantidad:               is.Cantidad,
+				PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+				TipoRegistro:           "Normal",
+				CreatedBy:              pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle para variante %d: %s", is.VarianteID, err.Error())})
+				return
+			}
+		} else {
+			// Stock insuficiente: dividir en Normal (disponible) + Backorder (resto)
+			if is.Disponible > 0 {
+				_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+					PedidoID:               pgtype.Int4{Int32: pedido.ID, Valid: true},
+					VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+					Cantidad:               is.Disponible,
+					PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+					TipoRegistro:           "Normal",
+					CreatedBy:              pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+				})
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle Normal para variante %d: %s", is.VarianteID, err.Error())})
+					return
+				}
+			}
+			_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+				PedidoID:               pgtype.Int4{Int32: pedido.ID, Valid: true},
+				VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+				Cantidad:               is.Cantidad - is.Disponible,
+				PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+				TipoRegistro:           "Backorder",
+				CreatedBy:              pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle Backorder para variante %d: %s", is.VarianteID, err.Error())})
+				return
+			}
 		}
-
-		// 5. Actualizar Stock (Opcional, pero recomendado)
-		// Aquí se podría llamar a una función para restar el stock actual
 	}
 
 	// 6. Confirmar Transacción
@@ -275,6 +325,42 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 	c.JSON(http.StatusOK, pedidoActualizado)
 }
 
+func (h *PedidosHandler) ActualizarBackorder(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de pedido inválido"})
+		return
+	}
+
+	var input struct {
+		GuiaBackorder       string `json:"guia_backorder"`
+		NotasAdminBackorder string `json:"notas_admin_backorder"`
+		EstadoBackorder     string `json:"estado_backorder" binding:"required"`
+		UpdatedBy           int32  `json:"updated_by"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de backorder inválidos: " + err.Error()})
+		return
+	}
+
+	pedidoActualizado, err := h.queries.ActualizarBackorderPedido(c.Request.Context(), db.ActualizarBackorderPedidoParams{
+		ID:                  int32(id),
+		GuiaBackorder:       pgtype.Text{String: input.GuiaBackorder, Valid: input.GuiaBackorder != ""},
+		NotasAdminBackorder: pgtype.Text{String: input.NotasAdminBackorder, Valid: input.NotasAdminBackorder != ""},
+		EstadoBackorder:     input.EstadoBackorder,
+		UpdatedBy:           pgtype.Int4{Int32: input.UpdatedBy, Valid: input.UpdatedBy != 0},
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar backorder: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, pedidoActualizado)
+}
+
 func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
 	// Parse order ID from URL
 	pedidoIDStr := c.Param("id")
@@ -311,10 +397,17 @@ func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
 	defer tx.Rollback(c.Request.Context())
 	qtx := h.queries.WithTx(tx)
 
-	// Insert each item as detalle
-	var addedSubtotal float64
+	// Pre-calcular stock disponible por item
+	type itemStockInfo struct {
+		VarianteID int32
+		Cantidad   int32
+		Precio     float64
+		Disponible int32
+	}
+
+	var itemsStock []itemStockInfo
+	esBackorder := false
 	for _, item := range input.Items {
-		// Validate stock from existencias_integracion
 		stockReal, err := qtx.GetStockRealVariante(c.Request.Context(), item.VarianteID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al obtener stock real para variante %d: %s", item.VarianteID, err.Error())})
@@ -324,22 +417,85 @@ func (h *PedidosHandler) AgregarProductos(c *gin.Context) {
 		committed, _ := qtx.GetCommittedStock(c.Request.Context(), pgtype.Int4{Int32: item.VarianteID, Valid: true})
 		disponible := int32(stockRealFloat) - committed
 		if disponible < item.Cantidad {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Stock insuficiente para variante %d", item.VarianteID)})
-			return
+			esBackorder = true
 		}
-		// Create detalle
-		_, err = qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
-			PedidoID:               pgtype.Int4{Int32: int32(pedidoID), Valid: true},
-			VarianteID:             pgtype.Int4{Int32: item.VarianteID, Valid: true},
-			Cantidad:               item.Cantidad,
-			PrecioUnitarioAplicado: utils.ToNumeric(item.Precio),
-			CreatedBy:              pgtype.Int4{Int32: int32(0), Valid: false}, // assuming system user
+		itemsStock = append(itemsStock, itemStockInfo{
+			VarianteID: item.VarianteID,
+			Cantidad:   item.Cantidad,
+			Precio:     item.Precio,
+			Disponible: disponible,
+		})
+	}
+
+	// Si hay backorder y el pedido no lo estaba, marcar como backorder
+	if esBackorder && !pedido.EsBackorder.Bool {
+		_, err := qtx.ActualizarBackorderPedido(c.Request.Context(), db.ActualizarBackorderPedidoParams{
+			ID:                  int32(pedidoID),
+			GuiaBackorder:       pgtype.Text{String: "", Valid: false},
+			NotasAdminBackorder: pgtype.Text{String: "", Valid: false},
+			EstadoBackorder:     "Pendiente",
+			UpdatedBy:           pgtype.Int4{Int32: int32(0), Valid: false},
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle: %s", err.Error())})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar backorder del pedido: " + err.Error()})
 			return
 		}
-		addedSubtotal += item.Precio * float64(item.Cantidad)
+		// También actualizar es_backorder a true directamente
+		_, err = tx.Exec(c.Request.Context(), "UPDATE pedidos SET es_backorder = true WHERE id = $1", int32(pedidoID))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al marcar pedido como backorder: " + err.Error()})
+			return
+		}
+	}
+
+	// Crear detalles splitteando según stock disponible
+	var addedSubtotal float64
+	for _, is := range itemsStock {
+		if is.Disponible >= is.Cantidad {
+			// Stock suficiente: un solo detalle Normal
+			_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+				PedidoID:               pgtype.Int4{Int32: int32(pedidoID), Valid: true},
+				VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+				Cantidad:               is.Cantidad,
+				PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+				TipoRegistro:           "Normal",
+				CreatedBy:              pgtype.Int4{Int32: int32(0), Valid: false},
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle: %s", err.Error())})
+				return
+			}
+			addedSubtotal += is.Precio * float64(is.Cantidad)
+		} else {
+			// Stock insuficiente: dividir en Normal (disponible) + Backorder (resto)
+			if is.Disponible > 0 {
+				_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+					PedidoID:               pgtype.Int4{Int32: int32(pedidoID), Valid: true},
+					VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+					Cantidad:               is.Disponible,
+					PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+					TipoRegistro:           "Normal",
+					CreatedBy:              pgtype.Int4{Int32: int32(0), Valid: false},
+				})
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle Normal: %s", err.Error())})
+					return
+				}
+			}
+			_, err := qtx.CrearPedidoDetalle(c.Request.Context(), db.CrearPedidoDetalleParams{
+				PedidoID:               pgtype.Int4{Int32: int32(pedidoID), Valid: true},
+				VarianteID:             pgtype.Int4{Int32: is.VarianteID, Valid: true},
+				Cantidad:               is.Cantidad - is.Disponible,
+				PrecioUnitarioAplicado: utils.ToNumeric(is.Precio),
+				TipoRegistro:           "Backorder",
+				CreatedBy:              pgtype.Int4{Int32: int32(0), Valid: false},
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error al crear detalle Backorder: %s", err.Error())})
+				return
+			}
+			addedSubtotal += is.Precio * float64(is.Cantidad)
+		}
 	}
 
 	// Update order totals

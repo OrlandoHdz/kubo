@@ -10,6 +10,9 @@ CREATE TABLE pedidos (
     iva DECIMAL(12, 2) NOT NULL,
     total_orden DECIMAL(12, 2) NOT NULL, 
     es_backorder BOOLEAN DEFAULT FALSE, 
+    guia_backorder VARCHAR(100) DEFAULT '',
+    notas_admin_backorder VARCHAR(250) DEFAULT '',
+    estado_backorder VARCHAR(20) NOT NULL DEFAULT '',
     guia VARCHAR(100) DEFAULT '',
     notas_admin VARCHAR(250) DEFAULT '',
     fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -32,6 +35,7 @@ CREATE TABLE pedido_detalles (
     variante_id INTEGER REFERENCES productos_variantes(id),
     cantidad INTEGER NOT NULL,
     precio_unitario_aplicado DECIMAL(12, 2) NOT NULL, 
+    tipo_registro VARCHAR(10) NOT NULL DEFAULT 'Normal',
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

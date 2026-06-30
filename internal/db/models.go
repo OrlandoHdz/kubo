@@ -163,25 +163,28 @@ type FacturasIntegracion struct {
 }
 
 type Pedido struct {
-	ID          int32            `json:"id"`
-	Folio       string           `json:"folio"`
-	ClienteID   pgtype.Int4      `json:"cliente_id"`
-	UsuarioID   pgtype.Int4      `json:"usuario_id"`
-	Estado      string           `json:"estado"`
-	MetodoPago  string           `json:"metodo_pago"`
-	Subtotal    pgtype.Numeric   `json:"subtotal"`
-	Iva         pgtype.Numeric   `json:"iva"`
-	TotalOrden  pgtype.Numeric   `json:"total_orden"`
-	EsBackorder pgtype.Bool      `json:"es_backorder"`
-	Guia        pgtype.Text      `json:"guia"`
-	NotasAdmin  pgtype.Text      `json:"notas_admin"`
-	FechaPedido pgtype.Timestamp `json:"fecha_pedido"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
-	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy   pgtype.Int4      `json:"created_by"`
-	UpdatedBy   pgtype.Int4      `json:"updated_by"`
-	DeletedBy   pgtype.Int4      `json:"deleted_by"`
+	ID                  int32            `json:"id"`
+	Folio               string           `json:"folio"`
+	ClienteID           pgtype.Int4      `json:"cliente_id"`
+	UsuarioID           pgtype.Int4      `json:"usuario_id"`
+	Estado              string           `json:"estado"`
+	MetodoPago          string           `json:"metodo_pago"`
+	Subtotal            pgtype.Numeric   `json:"subtotal"`
+	Iva                 pgtype.Numeric   `json:"iva"`
+	TotalOrden          pgtype.Numeric   `json:"total_orden"`
+	EsBackorder         pgtype.Bool      `json:"es_backorder"`
+	GuiaBackorder       pgtype.Text      `json:"guia_backorder"`
+	NotasAdminBackorder pgtype.Text      `json:"notas_admin_backorder"`
+	EstadoBackorder     string           `json:"estado_backorder"`
+	Guia                pgtype.Text      `json:"guia"`
+	NotasAdmin          pgtype.Text      `json:"notas_admin"`
+	FechaPedido         pgtype.Timestamp `json:"fecha_pedido"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	UpdatedAt           pgtype.Timestamp `json:"updated_at"`
+	DeletedAt           pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy           pgtype.Int4      `json:"created_by"`
+	UpdatedBy           pgtype.Int4      `json:"updated_by"`
+	DeletedBy           pgtype.Int4      `json:"deleted_by"`
 }
 
 type PedidoDetalle struct {
@@ -190,6 +193,7 @@ type PedidoDetalle struct {
 	VarianteID             pgtype.Int4      `json:"variante_id"`
 	Cantidad               int32            `json:"cantidad"`
 	PrecioUnitarioAplicado pgtype.Numeric   `json:"precio_unitario_aplicado"`
+	TipoRegistro           string           `json:"tipo_registro"`
 	CreatedAt              pgtype.Timestamp `json:"created_at"`
 	UpdatedAt              pgtype.Timestamp `json:"updated_at"`
 	DeletedAt              pgtype.Timestamp `json:"deleted_at"`
@@ -221,6 +225,8 @@ type ProductosPadre struct {
 	FotoUrl              pgtype.Text      `json:"foto_url"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
+	FotoUrl2             pgtype.Text      `json:"foto_url2"`
+	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
 	DeletedAt            pgtype.Timestamp `json:"deleted_at"`
@@ -282,6 +288,28 @@ type SolicitudRegistroNuevoCliente struct {
 	CreatedBy         pgtype.Int4      `json:"created_by"`
 	UpdatedBy         pgtype.Int4      `json:"updated_by"`
 	DeletedBy         pgtype.Int4      `json:"deleted_by"`
+}
+
+type TransaccionesBanregio struct {
+	ID               int32            `json:"id"`
+	BnrgMontoTrans   pgtype.Numeric   `json:"bnrg_monto_trans"`
+	BnrgIDAfiliacion pgtype.Text      `json:"bnrg_id_afiliacion"`
+	BnrgFechaLocal   pgtype.Date      `json:"bnrg_fecha_local"`
+	BnrgCodigoAut    pgtype.Text      `json:"bnrg_codigo_aut"`
+	BnrgFolio        pgtype.Text      `json:"bnrg_folio"`
+	BnrgTexto        pgtype.Text      `json:"bnrg_texto"`
+	BnrgReferencia   pgtype.Text      `json:"bnrg_referencia"`
+	BnrgIDMediop     pgtype.Text      `json:"bnrg_id_mediop"`
+	BnrgCodigoProc   pgtype.Text      `json:"bnrg_codigo_proc"`
+	BnrgHoraLocal    pgtype.Time      `json:"bnrg_hora_local"`
+	BnrgCodigoEmisor pgtype.Text      `json:"bnrg_codigo_emisor"`
+	PedidoID         pgtype.Int4      `json:"pedido_id"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
+	DeletedAt        pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy        pgtype.Int4      `json:"created_by"`
+	UpdatedBy        pgtype.Int4      `json:"updated_by"`
+	DeletedBy        pgtype.Int4      `json:"deleted_by"`
 }
 
 type Usuario struct {

@@ -5,6 +5,8 @@ CREATE TABLE productos_padre (
     foto_url TEXT,
     ficha_tecnica TEXT, -- Para PDFs y Hojas de Seguridad [cite: 149]
     descripcion_extendida TEXT,
+    foto_url2 TEXT,
+    foto_url_3 TEXT,
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

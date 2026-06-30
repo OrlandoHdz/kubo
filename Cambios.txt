@@ -11,9 +11,15 @@ ALTER TABLE productos_variantes ADD COLUMN permitir_backorder BOOLEAN DEFAULT TR
 
 #Para manejar backorder
 ALTER TABLE pedido_detalles 
-ADD COLUMN tipo_registro TEXT NOT NULL DEFAULT 'Normal', -- 'Normal' o 'Backorder';
+ADD COLUMN tipo_registro VARCHAR(10) NOT NULL DEFAULT 'Normal'; -- 'Normal' o 'Backorder'
 
 ALTER TABLE pedidos
-ADD COLUMN guia_backorder VARCHAR(100) DEFAULT '';
-ADD COLUMN notas_admin_backorder VARCHAR(250) DEFAULT '';
+ADD COLUMN guia_backorder VARCHAR(100) DEFAULT '',
+ADD COLUMN notas_admin_backorder VARCHAR(250) DEFAULT '',
 ADD COLUMN estado_backorder VARCHAR(20) NOT NULL DEFAULT 'Pendiente';
+
+
+#Para manejar dos fotos mas
+ALTER TABLE productos_padre
+ADD COLUMN foto_url2 TEXT DEFAULT '',
+ADD COLUMN foto_url_3 TEXT DEFAULT '';

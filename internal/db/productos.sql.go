@@ -18,11 +18,13 @@ SET
     descripcion = $3,
     descripcion_extendida = $4,
     foto_url = $5,
-    ficha_tecnica = $6,
+    foto_url2 = $6,
+    foto_url_3 = $7,
+    ficha_tecnica = $8,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $7
+    updated_by = $9
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type ActualizarProductoPadreParams struct {
@@ -31,6 +33,8 @@ type ActualizarProductoPadreParams struct {
 	Descripcion          pgtype.Text `json:"descripcion"`
 	DescripcionExtendida pgtype.Text `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text `json:"foto_url"`
+	FotoUrl2             pgtype.Text `json:"foto_url2"`
+	FotoUrl3             pgtype.Text `json:"foto_url_3"`
 	FichaTecnica         pgtype.Text `json:"ficha_tecnica"`
 	UpdatedBy            pgtype.Int4 `json:"updated_by"`
 }
@@ -42,6 +46,8 @@ func (q *Queries) ActualizarProductoPadre(ctx context.Context, arg ActualizarPro
 		arg.Descripcion,
 		arg.DescripcionExtendida,
 		arg.FotoUrl,
+		arg.FotoUrl2,
+		arg.FotoUrl3,
 		arg.FichaTecnica,
 		arg.UpdatedBy,
 	)
@@ -53,6 +59,8 @@ func (q *Queries) ActualizarProductoPadre(ctx context.Context, arg ActualizarPro
 		&i.FotoUrl,
 		&i.FichaTecnica,
 		&i.DescripcionExtendida,
+		&i.FotoUrl2,
+		&i.FotoUrl3,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -191,17 +199,21 @@ INSERT INTO productos_padre (
     cve_prod_integracion, 
     descripcion, 
     descripcion_extendida, 
-    foto_url, 
+    foto_url,
+    foto_url2,
+    foto_url_3, 
     ficha_tecnica, 
     created_by
 ) VALUES (
     $1, 
     $2, 
     $3, 
-    $4, 
-    $5, 
-    $6
-) RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $4,
+    $5,
+    $6, 
+    $7, 
+    $8
+) RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type CrearProductoPadreParams struct {
@@ -209,6 +221,8 @@ type CrearProductoPadreParams struct {
 	Descripcion          pgtype.Text `json:"descripcion"`
 	DescripcionExtendida pgtype.Text `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text `json:"foto_url"`
+	FotoUrl2             pgtype.Text `json:"foto_url2"`
+	FotoUrl3             pgtype.Text `json:"foto_url_3"`
 	FichaTecnica         pgtype.Text `json:"ficha_tecnica"`
 	CreatedBy            pgtype.Int4 `json:"created_by"`
 }
@@ -223,6 +237,8 @@ func (q *Queries) CrearProductoPadre(ctx context.Context, arg CrearProductoPadre
 		arg.Descripcion,
 		arg.DescripcionExtendida,
 		arg.FotoUrl,
+		arg.FotoUrl2,
+		arg.FotoUrl3,
 		arg.FichaTecnica,
 		arg.CreatedBy,
 	)
@@ -234,6 +250,8 @@ func (q *Queries) CrearProductoPadre(ctx context.Context, arg CrearProductoPadre
 		&i.FotoUrl,
 		&i.FichaTecnica,
 		&i.DescripcionExtendida,
+		&i.FotoUrl2,
+		&i.FotoUrl3,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -332,7 +350,7 @@ func (q *Queries) CrearVariante(ctx context.Context, arg CrearVarianteParams) (P
 }
 
 const getProductoPadre = `-- name: GetProductoPadre :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -345,6 +363,8 @@ type GetProductoPadreRow struct {
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
+	FotoUrl2             pgtype.Text      `json:"foto_url2"`
+	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -364,6 +384,8 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 		&i.Descripcion,
 		&i.DescripcionExtendida,
 		&i.FotoUrl,
+		&i.FotoUrl2,
+		&i.FotoUrl3,
 		&i.FichaTecnica,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -377,7 +399,7 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 }
 
 const getProductoPadreByDescripcion = `-- name: GetProductoPadreByDescripcion :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -390,6 +412,8 @@ type GetProductoPadreByDescripcionRow struct {
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
+	FotoUrl2             pgtype.Text      `json:"foto_url2"`
+	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -409,6 +433,8 @@ func (q *Queries) GetProductoPadreByDescripcion(ctx context.Context, descripcion
 		&i.Descripcion,
 		&i.DescripcionExtendida,
 		&i.FotoUrl,
+		&i.FotoUrl2,
+		&i.FotoUrl3,
 		&i.FichaTecnica,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -511,7 +537,7 @@ func (q *Queries) GetVarianteBySKU(ctx context.Context, sku string) (ProductosVa
 }
 
 const listarProductosPadre = `-- name: ListarProductosPadre :many
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -524,6 +550,8 @@ type ListarProductosPadreRow struct {
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
+	FotoUrl2             pgtype.Text      `json:"foto_url2"`
+	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -549,6 +577,8 @@ func (q *Queries) ListarProductosPadre(ctx context.Context) ([]ListarProductosPa
 			&i.Descripcion,
 			&i.DescripcionExtendida,
 			&i.FotoUrl,
+			&i.FotoUrl2,
+			&i.FotoUrl3,
 			&i.FichaTecnica,
 			&i.CreatedAt,
 			&i.UpdatedAt,

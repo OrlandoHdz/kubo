@@ -89,6 +89,32 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 		fotoUrl = c.PostForm("foto_url")
 	}
 
+	fotoUrl2 := c.PostForm("foto_url2")
+	foto2File, err2 := c.FormFile("foto2")
+	if err2 == nil {
+		uploadDir2 := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir2, os.ModePerm); err == nil {
+			filename2 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto2File.Filename))
+			filePath2 := filepath.Join(uploadDir2, filename2)
+			if err := c.SaveUploadedFile(foto2File, filePath2); err == nil {
+				fotoUrl2 = "/uploads/productos/fotos/" + filename2
+			}
+		}
+	}
+
+	fotoUrl3 := c.PostForm("foto_url_3")
+	foto3File, err3 := c.FormFile("foto3")
+	if err3 == nil {
+		uploadDir3 := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir3, os.ModePerm); err == nil {
+			filename3 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto3File.Filename))
+			filePath3 := filepath.Join(uploadDir3, filename3)
+			if err := c.SaveUploadedFile(foto3File, filePath3); err == nil {
+				fotoUrl3 = "/uploads/productos/fotos/" + filename3
+			}
+		}
+	}
+
 	var fichaTecnicaUrl string
 	fichaFile, err := c.FormFile("ficha_tecnica")
 	if err == nil {
@@ -110,6 +136,8 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
 		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
 		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FotoUrl2:             pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
+		FotoUrl3:             pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
 		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
 		CreatedBy:            pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
 	})
@@ -165,6 +193,32 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 		fotoUrl = c.PostForm("foto_url")
 	}
 
+	fotoUrl2 := c.PostForm("foto_url2")
+	foto2File, err2 := c.FormFile("foto2")
+	if err2 == nil {
+		uploadDir2 := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir2, os.ModePerm); err == nil {
+			filename2 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto2File.Filename))
+			filePath2 := filepath.Join(uploadDir2, filename2)
+			if err := c.SaveUploadedFile(foto2File, filePath2); err == nil {
+				fotoUrl2 = "/uploads/productos/fotos/" + filename2
+			}
+		}
+	}
+
+	fotoUrl3 := c.PostForm("foto_url_3")
+	foto3File, err3 := c.FormFile("foto3")
+	if err3 == nil {
+		uploadDir3 := "uploads/productos/fotos"
+		if err := os.MkdirAll(uploadDir3, os.ModePerm); err == nil {
+			filename3 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto3File.Filename))
+			filePath3 := filepath.Join(uploadDir3, filename3)
+			if err := c.SaveUploadedFile(foto3File, filePath3); err == nil {
+				fotoUrl3 = "/uploads/productos/fotos/" + filename3
+			}
+		}
+	}
+
 	var fichaTecnicaUrl string
 	fichaFile, err := c.FormFile("ficha_tecnica")
 	if err == nil {
@@ -187,6 +241,8 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
 		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
 		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FotoUrl2:             pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
+		FotoUrl3:             pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
 		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
 		UpdatedBy:            pgtype.Int4{Int32: updatedBy, Valid: updatedBy != 0},
 	})

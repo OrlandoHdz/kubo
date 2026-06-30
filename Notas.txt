@@ -204,3 +204,6 @@ curl --location --request PATCH 'https://api.pruebas-arsenal.almacendigital.work
 --form 'updated_by="1"' \
 --form 'foto=@"/Users/orlando/Downloads/DISENOFOTOSPAGINAWEB.jpg"' \
 --form 'ficha_tecnica=@"/Users/orlando/Downloads/Ficha_Tecnica_Difusor_DM250_T-MILLER_ARW.pdf"'
+
+
+

@@ -11,6 +11,62 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const actualizarBackorderPedido = `-- name: ActualizarBackorderPedido :one
+UPDATE pedidos
+SET 
+    guia_backorder = $2,
+    notas_admin_backorder = $3,
+    estado_backorder = $4,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $5
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+`
+
+type ActualizarBackorderPedidoParams struct {
+	ID                  int32       `json:"id"`
+	GuiaBackorder       pgtype.Text `json:"guia_backorder"`
+	NotasAdminBackorder pgtype.Text `json:"notas_admin_backorder"`
+	EstadoBackorder     string      `json:"estado_backorder"`
+	UpdatedBy           pgtype.Int4 `json:"updated_by"`
+}
+
+func (q *Queries) ActualizarBackorderPedido(ctx context.Context, arg ActualizarBackorderPedidoParams) (Pedido, error) {
+	row := q.db.QueryRow(ctx, actualizarBackorderPedido,
+		arg.ID,
+		arg.GuiaBackorder,
+		arg.NotasAdminBackorder,
+		arg.EstadoBackorder,
+		arg.UpdatedBy,
+	)
+	var i Pedido
+	err := row.Scan(
+		&i.ID,
+		&i.Folio,
+		&i.ClienteID,
+		&i.UsuarioID,
+		&i.Estado,
+		&i.MetodoPago,
+		&i.Subtotal,
+		&i.Iva,
+		&i.TotalOrden,
+		&i.EsBackorder,
+		&i.GuiaBackorder,
+		&i.NotasAdminBackorder,
+		&i.EstadoBackorder,
+		&i.Guia,
+		&i.NotasAdmin,
+		&i.FechaPedido,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const actualizarEstadoPedido = `-- name: ActualizarEstadoPedido :one
 UPDATE pedidos
 SET 
@@ -20,7 +76,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type ActualizarEstadoPedidoParams struct {
@@ -51,6 +107,9 @@ func (q *Queries) ActualizarEstadoPedido(ctx context.Context, arg ActualizarEsta
 		&i.Iva,
 		&i.TotalOrden,
 		&i.EsBackorder,
+		&i.GuiaBackorder,
+		&i.NotasAdminBackorder,
+		&i.EstadoBackorder,
 		&i.Guia,
 		&i.NotasAdmin,
 		&i.FechaPedido,
@@ -92,23 +151,29 @@ INSERT INTO pedidos (
     iva, 
     total_orden, 
     es_backorder, 
+    guia_backorder,
+    notas_admin_backorder,
+    estado_backorder,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-) RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+) RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type CrearPedidoParams struct {
-	Folio       string         `json:"folio"`
-	ClienteID   pgtype.Int4    `json:"cliente_id"`
-	UsuarioID   pgtype.Int4    `json:"usuario_id"`
-	Estado      string         `json:"estado"`
-	MetodoPago  string         `json:"metodo_pago"`
-	Subtotal    pgtype.Numeric `json:"subtotal"`
-	Iva         pgtype.Numeric `json:"iva"`
-	TotalOrden  pgtype.Numeric `json:"total_orden"`
-	EsBackorder pgtype.Bool    `json:"es_backorder"`
-	CreatedBy   pgtype.Int4    `json:"created_by"`
+	Folio               string         `json:"folio"`
+	ClienteID           pgtype.Int4    `json:"cliente_id"`
+	UsuarioID           pgtype.Int4    `json:"usuario_id"`
+	Estado              string         `json:"estado"`
+	MetodoPago          string         `json:"metodo_pago"`
+	Subtotal            pgtype.Numeric `json:"subtotal"`
+	Iva                 pgtype.Numeric `json:"iva"`
+	TotalOrden          pgtype.Numeric `json:"total_orden"`
+	EsBackorder         pgtype.Bool    `json:"es_backorder"`
+	GuiaBackorder       pgtype.Text    `json:"guia_backorder"`
+	NotasAdminBackorder pgtype.Text    `json:"notas_admin_backorder"`
+	EstadoBackorder     string         `json:"estado_backorder"`
+	CreatedBy           pgtype.Int4    `json:"created_by"`
 }
 
 func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedido, error) {
@@ -122,6 +187,9 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 		arg.Iva,
 		arg.TotalOrden,
 		arg.EsBackorder,
+		arg.GuiaBackorder,
+		arg.NotasAdminBackorder,
+		arg.EstadoBackorder,
 		arg.CreatedBy,
 	)
 	var i Pedido
@@ -136,6 +204,9 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 		&i.Iva,
 		&i.TotalOrden,
 		&i.EsBackorder,
+		&i.GuiaBackorder,
+		&i.NotasAdminBackorder,
+		&i.EstadoBackorder,
 		&i.Guia,
 		&i.NotasAdmin,
 		&i.FechaPedido,
@@ -155,10 +226,11 @@ INSERT INTO pedido_detalles (
     variante_id, 
     cantidad, 
     precio_unitario_aplicado, 
+    tipo_registro,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5
-) RETURNING id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $1, $2, $3, $4, $5, $6
+) RETURNING id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, tipo_registro, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type CrearPedidoDetalleParams struct {
@@ -166,6 +238,7 @@ type CrearPedidoDetalleParams struct {
 	VarianteID             pgtype.Int4    `json:"variante_id"`
 	Cantidad               int32          `json:"cantidad"`
 	PrecioUnitarioAplicado pgtype.Numeric `json:"precio_unitario_aplicado"`
+	TipoRegistro           string         `json:"tipo_registro"`
 	CreatedBy              pgtype.Int4    `json:"created_by"`
 }
 
@@ -175,6 +248,7 @@ func (q *Queries) CrearPedidoDetalle(ctx context.Context, arg CrearPedidoDetalle
 		arg.VarianteID,
 		arg.Cantidad,
 		arg.PrecioUnitarioAplicado,
+		arg.TipoRegistro,
 		arg.CreatedBy,
 	)
 	var i PedidoDetalle
@@ -184,6 +258,7 @@ func (q *Queries) CrearPedidoDetalle(ctx context.Context, arg CrearPedidoDetalle
 		&i.VarianteID,
 		&i.Cantidad,
 		&i.PrecioUnitarioAplicado,
+		&i.TipoRegistro,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -212,7 +287,7 @@ func (q *Queries) GetCommittedStock(ctx context.Context, varianteID pgtype.Int4)
 }
 
 const getPedido = `-- name: GetPedido :one
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -230,6 +305,44 @@ func (q *Queries) GetPedido(ctx context.Context, id int32) (Pedido, error) {
 		&i.Iva,
 		&i.TotalOrden,
 		&i.EsBackorder,
+		&i.GuiaBackorder,
+		&i.NotasAdminBackorder,
+		&i.EstadoBackorder,
+		&i.Guia,
+		&i.NotasAdmin,
+		&i.FechaPedido,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const getPedidoByFolio = `-- name: GetPedidoByFolio :one
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+WHERE folio = $1 AND deleted_at IS NULL LIMIT 1
+`
+
+func (q *Queries) GetPedidoByFolio(ctx context.Context, folio string) (Pedido, error) {
+	row := q.db.QueryRow(ctx, getPedidoByFolio, folio)
+	var i Pedido
+	err := row.Scan(
+		&i.ID,
+		&i.Folio,
+		&i.ClienteID,
+		&i.UsuarioID,
+		&i.Estado,
+		&i.MetodoPago,
+		&i.Subtotal,
+		&i.Iva,
+		&i.TotalOrden,
+		&i.EsBackorder,
+		&i.GuiaBackorder,
+		&i.NotasAdminBackorder,
+		&i.EstadoBackorder,
 		&i.Guia,
 		&i.NotasAdmin,
 		&i.FechaPedido,
@@ -244,7 +357,7 @@ func (q *Queries) GetPedido(ctx context.Context, id int32) (Pedido, error) {
 }
 
 const listarPedidos = `-- name: ListarPedidos :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -269,6 +382,9 @@ func (q *Queries) ListarPedidos(ctx context.Context) ([]Pedido, error) {
 			&i.Iva,
 			&i.TotalOrden,
 			&i.EsBackorder,
+			&i.GuiaBackorder,
+			&i.NotasAdminBackorder,
+			&i.EstadoBackorder,
 			&i.Guia,
 			&i.NotasAdmin,
 			&i.FechaPedido,
@@ -290,7 +406,7 @@ func (q *Queries) ListarPedidos(ctx context.Context) ([]Pedido, error) {
 }
 
 const listarPedidosDetalle = `-- name: ListarPedidosDetalle :many
-SELECT d.id, d.pedido_id, d.variante_id, d.cantidad, d.precio_unitario_aplicado, d.created_at, d.updated_at, d.deleted_at, d.created_by, d.updated_by, d.deleted_by,
+SELECT d.id, d.pedido_id, d.variante_id, d.cantidad, d.precio_unitario_aplicado, d.tipo_registro, d.created_at, d.updated_at, d.deleted_at, d.created_by, d.updated_by, d.deleted_by,
        v.sku AS variante_sku,
        p.descripcion AS padre_descripcion,
        p.descripcion_extendida AS padre_descripcion_extendida,
@@ -307,6 +423,7 @@ type ListarPedidosDetalleRow struct {
 	VarianteID                pgtype.Int4      `json:"variante_id"`
 	Cantidad                  int32            `json:"cantidad"`
 	PrecioUnitarioAplicado    pgtype.Numeric   `json:"precio_unitario_aplicado"`
+	TipoRegistro              string           `json:"tipo_registro"`
 	CreatedAt                 pgtype.Timestamp `json:"created_at"`
 	UpdatedAt                 pgtype.Timestamp `json:"updated_at"`
 	DeletedAt                 pgtype.Timestamp `json:"deleted_at"`
@@ -334,6 +451,7 @@ func (q *Queries) ListarPedidosDetalle(ctx context.Context, pedidoID pgtype.Int4
 			&i.VarianteID,
 			&i.Cantidad,
 			&i.PrecioUnitarioAplicado,
+			&i.TipoRegistro,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -356,7 +474,7 @@ func (q *Queries) ListarPedidosDetalle(ctx context.Context, pedidoID pgtype.Int4
 }
 
 const listarPedidosPorCliente = `-- name: ListarPedidosPorCliente :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, es_backorder, guia_backorder, notas_admin_backorder, estado_backorder, guia, notas_admin, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
 WHERE cliente_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -381,6 +499,9 @@ func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.
 			&i.Iva,
 			&i.TotalOrden,
 			&i.EsBackorder,
+			&i.GuiaBackorder,
+			&i.NotasAdminBackorder,
+			&i.EstadoBackorder,
 			&i.Guia,
 			&i.NotasAdmin,
 			&i.FechaPedido,

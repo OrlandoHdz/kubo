@@ -9,34 +9,38 @@ INSERT INTO productos_padre (
     cve_prod_integracion, 
     descripcion, 
     descripcion_extendida, 
-    foto_url, 
+    foto_url,
+    foto_url2,
+    foto_url_3, 
     ficha_tecnica, 
     created_by
 ) VALUES (
     $1, 
     $2, 
     $3, 
-    $4, 
-    $5, 
-    $6
+    $4,
+    $5,
+    $6, 
+    $7, 
+    $8
 ) RETURNING *;
 
 -- name: GetProductoPadre :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: GetProductoPadreByDescripcion :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: ListarProductosPadre :many
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -49,9 +53,11 @@ SET
     descripcion = $3,
     descripcion_extendida = $4,
     foto_url = $5,
-    ficha_tecnica = $6,
+    foto_url2 = $6,
+    foto_url_3 = $7,
+    ficha_tecnica = $8,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $7
+    updated_by = $9
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
