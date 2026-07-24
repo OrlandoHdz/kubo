@@ -1,0 +1,2 @@
+ALTER TABLE productos_padre
+ADD COLUMN IF NOT EXISTS titulo VARCHAR(400);

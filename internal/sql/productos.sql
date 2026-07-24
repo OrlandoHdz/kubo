@@ -7,40 +7,52 @@
 -- name: CrearProductoPadre :one
 INSERT INTO productos_padre (
     cve_prod_integracion, 
-    descripcion, 
+    descripcion,
+    titulo,
     descripcion_extendida, 
     foto_url,
     foto_url2,
     foto_url_3, 
+    foto_url_4,
+    foto_url_5,
+    foto_url_6,
+    foto_url_7,
+    foto_url_8,
     ficha_tecnica, 
     created_by
 ) VALUES (
     $1, 
-    $2, 
-    $3, 
+    $2,
+    $3,
     $4,
     $5,
-    $6, 
+    $6,
     $7, 
-    $8
+    $8,
+    $9,
+    $10,
+    $11,
+    $12,
+    $13, 
+    $14
 ) RETURNING *;
 
 -- name: GetProductoPadre :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: GetProductoPadreByDescripcion :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1;
 
 -- name: ListarProductosPadre :many
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -51,13 +63,19 @@ UPDATE productos_padre
 SET 
     cve_prod_integracion = $2,
     descripcion = $3,
-    descripcion_extendida = $4,
-    foto_url = $5,
-    foto_url2 = $6,
-    foto_url_3 = $7,
-    ficha_tecnica = $8,
+    titulo = $4,
+    descripcion_extendida = $5,
+    foto_url = $6,
+    foto_url2 = $7,
+    foto_url_3 = $8,
+    foto_url_4 = $9,
+    foto_url_5 = $10,
+    foto_url_6 = $11,
+    foto_url_7 = $12,
+    foto_url_8 = $13,
+    ficha_tecnica = $14,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $9
+    updated_by = $15
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
@@ -91,10 +109,23 @@ WHERE sku = $1 AND deleted_at IS NULL LIMIT 1;
 SELECT * FROM productos_variantes 
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1;
 
+-- name: GetVarianteConExistencia :one
+SELECT v.id, v.padre_id, v.sku, v.multiplos, v.permitir_backorder,
+       CAST(COALESCE(ei.existencia_total, 0::numeric) AS numeric(20,8)) AS existencia_total
+FROM productos_variantes v
+LEFT JOIN productos_padre p ON v.padre_id = p.id
+LEFT JOIN LATERAL (
+    SELECT SUM(existencia) AS existencia_total
+    FROM existencias_integracion
+    WHERE cve_prod = p.cve_prod_integracion
+) ei ON true
+WHERE v.id = $1 AND v.deleted_at IS NULL LIMIT 1;
+
 -- name: ListarVariantesPorPadre :many
 -- Para mostrar todas las medidas de un mismo producto (cite: 184)
 SELECT v.id, v.padre_id, v.sku, v.medida, v.precio_distribuidor, v.precio_lista, v.precio_publico, v.stock_actual, v.unidad_medida, v.lead_time_dias, v.especificaciones, v.categoria, v.subgrupo, v.modelo, v.tipo, v.marca, v.multiplos, v.permitir_backorder, v.created_at, v.updated_at, v.deleted_at, v.created_by, v.updated_by, v.deleted_by,
        p.descripcion AS padre_descripcion,
+       p.titulo AS padre_titulo,
        p.descripcion_extendida AS padre_descripcion_extendida,
        CAST(COALESCE(ei.existencia_total, 0::numeric) AS numeric(20,8)) AS existencia_total
 FROM productos_variantes v

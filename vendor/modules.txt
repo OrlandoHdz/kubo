@@ -2,6 +2,9 @@
 ## explicit; go 1.12
 github.com/SebastiaanKlippert/go-foxpro-dbf
 github.com/SebastiaanKlippert/go-foxpro-dbf/jd
+# github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
+## explicit
+github.com/aliyun/aliyun-oss-go-sdk/oss
 # github.com/bytedance/gopkg v0.1.3
 ## explicit; go 1.18
 github.com/bytedance/gopkg/lang/dirtmake
@@ -47,6 +50,9 @@ github.com/bytedance/sonic/loader/internal/abi
 github.com/bytedance/sonic/loader/internal/iasm/expr
 github.com/bytedance/sonic/loader/internal/iasm/x86_64
 github.com/bytedance/sonic/loader/internal/rt
+# github.com/chai2010/webp v1.4.0
+## explicit; go 1.17
+github.com/chai2010/webp
 # github.com/cloudwego/base64x v0.1.6
 ## explicit; go 1.17
 github.com/cloudwego/base64x
@@ -157,6 +163,9 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
+# github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+## explicit
+github.com/nfnt/resize
 # github.com/pelletier/go-toml/v2 v2.2.4
 ## explicit; go 1.21.0
 github.com/pelletier/go-toml/v2
@@ -272,6 +281,9 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
+# golang.org/x/time v0.15.0
+## explicit; go 1.25.0
+golang.org/x/time/rate
 # google.golang.org/protobuf v1.36.10
 ## explicit; go 1.23
 google.golang.org/protobuf/encoding/protowire
@@ -287,6 +299,9 @@ google.golang.org/protobuf/proto
 google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

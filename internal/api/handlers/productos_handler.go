@@ -1,12 +1,9 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
@@ -15,11 +12,12 @@ import (
 )
 
 type ProductosHandler struct {
-	queries *db.Queries
+	queries   *db.Queries
+	ossConfig *utils.ConfigOSS
 }
 
-func NewProductosHandler(q *db.Queries) *ProductosHandler {
-	return &ProductosHandler{queries: q}
+func NewProductosHandler(q *db.Queries, ossCfg *utils.ConfigOSS) *ProductosHandler {
+	return &ProductosHandler{queries: q, ossConfig: ossCfg}
 }
 
 // ==========================================
@@ -76,13 +74,10 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 	var fotoUrl string
 	fotoFile, err := c.FormFile("foto")
 	if err == nil {
-		uploadDir := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
-			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fotoFile.Filename))
-			filePath := filepath.Join(uploadDir, filename)
-			if err := c.SaveUploadedFile(fotoFile, filePath); err == nil {
-				fotoUrl = "/uploads/productos/fotos/" + filename
-			}
+		fotoUrl, err = h.ossConfig.ProcesarYSubirImagen(fotoFile)
+		if err != nil {
+			log.Printf("Error subiendo foto a OSS: %v", err)
+			fotoUrl = ""
 		}
 	}
 	if fotoUrl == "" {
@@ -92,52 +87,101 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 	fotoUrl2 := c.PostForm("foto_url2")
 	foto2File, err2 := c.FormFile("foto2")
 	if err2 == nil {
-		uploadDir2 := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir2, os.ModePerm); err == nil {
-			filename2 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto2File.Filename))
-			filePath2 := filepath.Join(uploadDir2, filename2)
-			if err := c.SaveUploadedFile(foto2File, filePath2); err == nil {
-				fotoUrl2 = "/uploads/productos/fotos/" + filename2
-			}
+		fotoUrl2, err2 = h.ossConfig.ProcesarYSubirImagen(foto2File)
+		if err2 != nil {
+			log.Printf("Error subiendo foto2 a OSS: %v", err2)
+			fotoUrl2 = c.PostForm("foto_url2")
 		}
 	}
 
 	fotoUrl3 := c.PostForm("foto_url_3")
 	foto3File, err3 := c.FormFile("foto3")
 	if err3 == nil {
-		uploadDir3 := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir3, os.ModePerm); err == nil {
-			filename3 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto3File.Filename))
-			filePath3 := filepath.Join(uploadDir3, filename3)
-			if err := c.SaveUploadedFile(foto3File, filePath3); err == nil {
-				fotoUrl3 = "/uploads/productos/fotos/" + filename3
-			}
+		fotoUrl3, err3 = h.ossConfig.ProcesarYSubirImagen(foto3File)
+		if err3 != nil {
+			log.Printf("Error subiendo foto3 a OSS: %v", err3)
+			fotoUrl3 = c.PostForm("foto_url_3")
+		}
+	}
+
+	fotoUrl4 := c.PostForm("foto_url_4")
+	foto4File, err4 := c.FormFile("foto4")
+	if err4 == nil {
+		fotoUrl4, err4 = h.ossConfig.ProcesarYSubirImagen(foto4File)
+		if err4 != nil {
+			log.Printf("Error subiendo foto4 a OSS: %v", err4)
+			fotoUrl4 = c.PostForm("foto_url_4")
+		}
+	}
+
+	fotoUrl5 := c.PostForm("foto_url_5")
+	foto5File, err5 := c.FormFile("foto5")
+	if err5 == nil {
+		fotoUrl5, err5 = h.ossConfig.ProcesarYSubirImagen(foto5File)
+		if err5 != nil {
+			log.Printf("Error subiendo foto5 a OSS: %v", err5)
+			fotoUrl5 = c.PostForm("foto_url_5")
+		}
+	}
+
+	fotoUrl6 := c.PostForm("foto_url_6")
+	foto6File, err6 := c.FormFile("foto6")
+	if err6 == nil {
+		fotoUrl6, err6 = h.ossConfig.ProcesarYSubirImagen(foto6File)
+		if err6 != nil {
+			log.Printf("Error subiendo foto6 a OSS: %v", err6)
+			fotoUrl6 = c.PostForm("foto_url_6")
+		}
+	}
+
+	fotoUrl7 := c.PostForm("foto_url_7")
+	foto7File, err7 := c.FormFile("foto7")
+	if err7 == nil {
+		fotoUrl7, err7 = h.ossConfig.ProcesarYSubirImagen(foto7File)
+		if err7 != nil {
+			log.Printf("Error subiendo foto7 a OSS: %v", err7)
+			fotoUrl7 = c.PostForm("foto_url_7")
+		}
+	}
+
+	fotoUrl8 := c.PostForm("foto_url_8")
+	foto8File, err8 := c.FormFile("foto8")
+	if err8 == nil {
+		fotoUrl8, err8 = h.ossConfig.ProcesarYSubirImagen(foto8File)
+		if err8 != nil {
+			log.Printf("Error subiendo foto8 a OSS: %v", err8)
+			fotoUrl8 = c.PostForm("foto_url_8")
 		}
 	}
 
 	var fichaTecnicaUrl string
 	fichaFile, err := c.FormFile("ficha_tecnica")
 	if err == nil {
-		uploadDir := "uploads/productos/fichas"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
-			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fichaFile.Filename))
-			filePath := filepath.Join(uploadDir, filename)
-			if err := c.SaveUploadedFile(fichaFile, filePath); err == nil {
-				fichaTecnicaUrl = "/uploads/productos/fichas/" + filename
-			}
+		fichaTecnicaUrl, err = h.ossConfig.SubirFichaTecnica(fichaFile)
+		if err != nil {
+			log.Printf("Error subiendo ficha técnica a OSS: %v", err)
+			fichaTecnicaUrl = ""
 		}
 	}
 	if fichaTecnicaUrl == "" {
 		fichaTecnicaUrl = c.PostForm("ficha_tecnica")
 	}
 
+	titulo := c.PostForm("titulo")
+
 	producto, err := h.queries.CrearProductoPadre(c.Request.Context(), db.CrearProductoPadreParams{
 		CveProdIntegracion:   pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
 		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		Titulo:               pgtype.Text{String: titulo, Valid: titulo != ""},
 		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
 		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
 		FotoUrl2:             pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
 		FotoUrl3:             pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
+		FotoUrl4:             pgtype.Text{String: fotoUrl4, Valid: fotoUrl4 != ""},
+		FotoUrl5:             pgtype.Text{String: fotoUrl5, Valid: fotoUrl5 != ""},
+		FotoUrl6:             pgtype.Text{String: fotoUrl6, Valid: fotoUrl6 != ""},
+		FotoUrl7:             pgtype.Text{String: fotoUrl7, Valid: fotoUrl7 != ""},
+		FotoUrl8:             pgtype.Text{String: fotoUrl8, Valid: fotoUrl8 != ""},
 		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
 		CreatedBy:            pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
 	})
@@ -180,13 +224,10 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 	var fotoUrl string
 	fotoFile, err := c.FormFile("foto")
 	if err == nil {
-		uploadDir := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
-			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fotoFile.Filename))
-			filePath := filepath.Join(uploadDir, filename)
-			if err := c.SaveUploadedFile(fotoFile, filePath); err == nil {
-				fotoUrl = "/uploads/productos/fotos/" + filename
-			}
+		fotoUrl, err = h.ossConfig.ProcesarYSubirImagen(fotoFile)
+		if err != nil {
+			log.Printf("Error subiendo foto a OSS: %v", err)
+			fotoUrl = ""
 		}
 	}
 	if fotoUrl == "" {
@@ -196,53 +237,102 @@ func (h *ProductosHandler) ActualizarPadre(c *gin.Context) {
 	fotoUrl2 := c.PostForm("foto_url2")
 	foto2File, err2 := c.FormFile("foto2")
 	if err2 == nil {
-		uploadDir2 := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir2, os.ModePerm); err == nil {
-			filename2 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto2File.Filename))
-			filePath2 := filepath.Join(uploadDir2, filename2)
-			if err := c.SaveUploadedFile(foto2File, filePath2); err == nil {
-				fotoUrl2 = "/uploads/productos/fotos/" + filename2
-			}
+		fotoUrl2, err2 = h.ossConfig.ProcesarYSubirImagen(foto2File)
+		if err2 != nil {
+			log.Printf("Error subiendo foto2 a OSS: %v", err2)
+			fotoUrl2 = c.PostForm("foto_url2")
 		}
 	}
 
 	fotoUrl3 := c.PostForm("foto_url_3")
 	foto3File, err3 := c.FormFile("foto3")
 	if err3 == nil {
-		uploadDir3 := "uploads/productos/fotos"
-		if err := os.MkdirAll(uploadDir3, os.ModePerm); err == nil {
-			filename3 := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(foto3File.Filename))
-			filePath3 := filepath.Join(uploadDir3, filename3)
-			if err := c.SaveUploadedFile(foto3File, filePath3); err == nil {
-				fotoUrl3 = "/uploads/productos/fotos/" + filename3
-			}
+		fotoUrl3, err3 = h.ossConfig.ProcesarYSubirImagen(foto3File)
+		if err3 != nil {
+			log.Printf("Error subiendo foto3 a OSS: %v", err3)
+			fotoUrl3 = c.PostForm("foto_url_3")
+		}
+	}
+
+	fotoUrl4 := c.PostForm("foto_url_4")
+	foto4File, err4 := c.FormFile("foto4")
+	if err4 == nil {
+		fotoUrl4, err4 = h.ossConfig.ProcesarYSubirImagen(foto4File)
+		if err4 != nil {
+			log.Printf("Error subiendo foto4 a OSS: %v", err4)
+			fotoUrl4 = c.PostForm("foto_url_4")
+		}
+	}
+
+	fotoUrl5 := c.PostForm("foto_url_5")
+	foto5File, err5 := c.FormFile("foto5")
+	if err5 == nil {
+		fotoUrl5, err5 = h.ossConfig.ProcesarYSubirImagen(foto5File)
+		if err5 != nil {
+			log.Printf("Error subiendo foto5 a OSS: %v", err5)
+			fotoUrl5 = c.PostForm("foto_url_5")
+		}
+	}
+
+	fotoUrl6 := c.PostForm("foto_url_6")
+	foto6File, err6 := c.FormFile("foto6")
+	if err6 == nil {
+		fotoUrl6, err6 = h.ossConfig.ProcesarYSubirImagen(foto6File)
+		if err6 != nil {
+			log.Printf("Error subiendo foto6 a OSS: %v", err6)
+			fotoUrl6 = c.PostForm("foto_url_6")
+		}
+	}
+
+	fotoUrl7 := c.PostForm("foto_url_7")
+	foto7File, err7 := c.FormFile("foto7")
+	if err7 == nil {
+		fotoUrl7, err7 = h.ossConfig.ProcesarYSubirImagen(foto7File)
+		if err7 != nil {
+			log.Printf("Error subiendo foto7 a OSS: %v", err7)
+			fotoUrl7 = c.PostForm("foto_url_7")
+		}
+	}
+
+	fotoUrl8 := c.PostForm("foto_url_8")
+	foto8File, err8 := c.FormFile("foto8")
+	if err8 == nil {
+		fotoUrl8, err8 = h.ossConfig.ProcesarYSubirImagen(foto8File)
+		if err8 != nil {
+			log.Printf("Error subiendo foto8 a OSS: %v", err8)
+			fotoUrl8 = c.PostForm("foto_url_8")
 		}
 	}
 
 	var fichaTecnicaUrl string
 	fichaFile, err := c.FormFile("ficha_tecnica")
 	if err == nil {
-		uploadDir := "uploads/productos/fichas"
-		if err := os.MkdirAll(uploadDir, os.ModePerm); err == nil {
-			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(fichaFile.Filename))
-			filePath := filepath.Join(uploadDir, filename)
-			if err := c.SaveUploadedFile(fichaFile, filePath); err == nil {
-				fichaTecnicaUrl = "/uploads/productos/fichas/" + filename
-			}
+		fichaTecnicaUrl, err = h.ossConfig.SubirFichaTecnica(fichaFile)
+		if err != nil {
+			log.Printf("Error subiendo ficha técnica a OSS: %v", err)
+			fichaTecnicaUrl = ""
 		}
 	}
 	if fichaTecnicaUrl == "" {
 		fichaTecnicaUrl = c.PostForm("ficha_tecnica")
 	}
 
+	titulo := c.PostForm("titulo")
+
 	producto, err := h.queries.ActualizarProductoPadre(c.Request.Context(), db.ActualizarProductoPadreParams{
 		ID:                   int32(id),
 		CveProdIntegracion:   pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
 		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		Titulo:               pgtype.Text{String: titulo, Valid: titulo != ""},
 		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
 		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
 		FotoUrl2:             pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
 		FotoUrl3:             pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
+		FotoUrl4:             pgtype.Text{String: fotoUrl4, Valid: fotoUrl4 != ""},
+		FotoUrl5:             pgtype.Text{String: fotoUrl5, Valid: fotoUrl5 != ""},
+		FotoUrl6:             pgtype.Text{String: fotoUrl6, Valid: fotoUrl6 != ""},
+		FotoUrl7:             pgtype.Text{String: fotoUrl7, Valid: fotoUrl7 != ""},
+		FotoUrl8:             pgtype.Text{String: fotoUrl8, Valid: fotoUrl8 != ""},
 		FichaTecnica:         pgtype.Text{String: fichaTecnicaUrl, Valid: fichaTecnicaUrl != ""},
 		UpdatedBy:            pgtype.Int4{Int32: updatedBy, Valid: updatedBy != 0},
 	})
@@ -453,6 +543,24 @@ func (h *ProductosHandler) ActualizarVariante(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar variante: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, variante)
+}
+
+// ObtenerVariante devuelve una variante con su existencia total
+func (h *ProductosHandler) ObtenerVariante(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de variante inválido"})
+		return
+	}
+
+	variante, err := h.queries.GetVarianteConExistencia(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Variante no encontrada"})
 		return
 	}
 

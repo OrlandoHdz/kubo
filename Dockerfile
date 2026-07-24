@@ -3,6 +3,9 @@
 # ==========================================
 FROM golang:1.26.2-alpine AS builder
 
+# Instalamos las herramientas de compilación de C
+RUN apk add --no-cache gcc musl-dev
+
 WORKDIR /app
 
 # Descargamos dependencias primero para optimizar caché
@@ -13,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Compilamos el binario estático
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o kubo-api ./cmd/api/main.go 
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o kubo-api ./cmd/api/main.go 
 
 # ==========================================
 # ETAPA 2: Imagen Final de Production
@@ -31,6 +34,8 @@ COPY --from=builder /app/kubo-api .
 
 # Copiamos la configuración
 COPY configs/db/database.yaml ./configs/db/
+COPY configs/cloud/alibaba.yaml ./configs/cloud/
+COPY configs/cloud/email.yaml ./configs/cloud/
 
 # --- CONFIGURACIÓN DE VOLUMEN Y USUARIO ---
 # Creamos el usuario sin privilegios

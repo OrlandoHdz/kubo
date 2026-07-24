@@ -23,3 +23,16 @@ ADD COLUMN estado_backorder VARCHAR(20) NOT NULL DEFAULT 'Pendiente';
 ALTER TABLE productos_padre
 ADD COLUMN foto_url2 TEXT DEFAULT '',
 ADD COLUMN foto_url_3 TEXT DEFAULT '';
+
+
+
+-- 1. Limpiar la tabla de pedidos
+ALTER TABLE pedidos 
+    DROP COLUMN es_backorder,
+    DROP COLUMN guia_backorder,
+    DROP COLUMN notas_admin_backorder,
+    DROP COLUMN estado_backorder;
+
+-- 2. Limpiar la tabla de detalles de pedidos
+ALTER TABLE pedido_detalles 
+    DROP COLUMN tipo_registro;

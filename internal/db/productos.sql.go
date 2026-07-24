@@ -16,25 +16,37 @@ UPDATE productos_padre
 SET 
     cve_prod_integracion = $2,
     descripcion = $3,
-    descripcion_extendida = $4,
-    foto_url = $5,
-    foto_url2 = $6,
-    foto_url_3 = $7,
-    ficha_tecnica = $8,
+    titulo = $4,
+    descripcion_extendida = $5,
+    foto_url = $6,
+    foto_url2 = $7,
+    foto_url_3 = $8,
+    foto_url_4 = $9,
+    foto_url_5 = $10,
+    foto_url_6 = $11,
+    foto_url_7 = $12,
+    foto_url_8 = $13,
+    ficha_tecnica = $14,
     updated_at = CURRENT_TIMESTAMP,
-    updated_by = $9
+    updated_by = $15
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, cve_prod_integracion, titulo, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, foto_url_4, foto_url_5, foto_url_6, foto_url_7, foto_url_8, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type ActualizarProductoPadreParams struct {
 	ID                   int32       `json:"id"`
 	CveProdIntegracion   pgtype.Text `json:"cve_prod_integracion"`
 	Descripcion          pgtype.Text `json:"descripcion"`
+	Titulo               pgtype.Text `json:"titulo"`
 	DescripcionExtendida pgtype.Text `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text `json:"foto_url"`
 	FotoUrl2             pgtype.Text `json:"foto_url2"`
 	FotoUrl3             pgtype.Text `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text `json:"foto_url_8"`
 	FichaTecnica         pgtype.Text `json:"ficha_tecnica"`
 	UpdatedBy            pgtype.Int4 `json:"updated_by"`
 }
@@ -44,10 +56,16 @@ func (q *Queries) ActualizarProductoPadre(ctx context.Context, arg ActualizarPro
 		arg.ID,
 		arg.CveProdIntegracion,
 		arg.Descripcion,
+		arg.Titulo,
 		arg.DescripcionExtendida,
 		arg.FotoUrl,
 		arg.FotoUrl2,
 		arg.FotoUrl3,
+		arg.FotoUrl4,
+		arg.FotoUrl5,
+		arg.FotoUrl6,
+		arg.FotoUrl7,
+		arg.FotoUrl8,
 		arg.FichaTecnica,
 		arg.UpdatedBy,
 	)
@@ -55,12 +73,18 @@ func (q *Queries) ActualizarProductoPadre(ctx context.Context, arg ActualizarPro
 	err := row.Scan(
 		&i.ID,
 		&i.CveProdIntegracion,
+		&i.Titulo,
 		&i.Descripcion,
 		&i.FotoUrl,
 		&i.FichaTecnica,
 		&i.DescripcionExtendida,
 		&i.FotoUrl2,
 		&i.FotoUrl3,
+		&i.FotoUrl4,
+		&i.FotoUrl5,
+		&i.FotoUrl6,
+		&i.FotoUrl7,
+		&i.FotoUrl8,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -197,32 +221,50 @@ const crearProductoPadre = `-- name: CrearProductoPadre :one
 
 INSERT INTO productos_padre (
     cve_prod_integracion, 
-    descripcion, 
+    descripcion,
+    titulo,
     descripcion_extendida, 
     foto_url,
     foto_url2,
     foto_url_3, 
+    foto_url_4,
+    foto_url_5,
+    foto_url_6,
+    foto_url_7,
+    foto_url_8,
     ficha_tecnica, 
     created_by
 ) VALUES (
     $1, 
-    $2, 
-    $3, 
+    $2,
+    $3,
     $4,
     $5,
-    $6, 
+    $6,
     $7, 
-    $8
-) RETURNING id, cve_prod_integracion, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $8,
+    $9,
+    $10,
+    $11,
+    $12,
+    $13, 
+    $14
+) RETURNING id, cve_prod_integracion, titulo, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, foto_url_4, foto_url_5, foto_url_6, foto_url_7, foto_url_8, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
 `
 
 type CrearProductoPadreParams struct {
 	CveProdIntegracion   pgtype.Text `json:"cve_prod_integracion"`
 	Descripcion          pgtype.Text `json:"descripcion"`
+	Titulo               pgtype.Text `json:"titulo"`
 	DescripcionExtendida pgtype.Text `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text `json:"foto_url"`
 	FotoUrl2             pgtype.Text `json:"foto_url2"`
 	FotoUrl3             pgtype.Text `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text `json:"foto_url_8"`
 	FichaTecnica         pgtype.Text `json:"ficha_tecnica"`
 	CreatedBy            pgtype.Int4 `json:"created_by"`
 }
@@ -235,10 +277,16 @@ func (q *Queries) CrearProductoPadre(ctx context.Context, arg CrearProductoPadre
 	row := q.db.QueryRow(ctx, crearProductoPadre,
 		arg.CveProdIntegracion,
 		arg.Descripcion,
+		arg.Titulo,
 		arg.DescripcionExtendida,
 		arg.FotoUrl,
 		arg.FotoUrl2,
 		arg.FotoUrl3,
+		arg.FotoUrl4,
+		arg.FotoUrl5,
+		arg.FotoUrl6,
+		arg.FotoUrl7,
+		arg.FotoUrl8,
 		arg.FichaTecnica,
 		arg.CreatedBy,
 	)
@@ -246,12 +294,18 @@ func (q *Queries) CrearProductoPadre(ctx context.Context, arg CrearProductoPadre
 	err := row.Scan(
 		&i.ID,
 		&i.CveProdIntegracion,
+		&i.Titulo,
 		&i.Descripcion,
 		&i.FotoUrl,
 		&i.FichaTecnica,
 		&i.DescripcionExtendida,
 		&i.FotoUrl2,
 		&i.FotoUrl3,
+		&i.FotoUrl4,
+		&i.FotoUrl5,
+		&i.FotoUrl6,
+		&i.FotoUrl7,
+		&i.FotoUrl8,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -350,7 +404,7 @@ func (q *Queries) CrearVariante(ctx context.Context, arg CrearVarianteParams) (P
 }
 
 const getProductoPadre = `-- name: GetProductoPadre :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -360,11 +414,17 @@ WHERE p.id = $1 AND p.deleted_at IS NULL LIMIT 1
 type GetProductoPadreRow struct {
 	ID                   int32            `json:"id"`
 	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Titulo               pgtype.Text      `json:"titulo"`
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
 	FotoUrl2             pgtype.Text      `json:"foto_url2"`
 	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text      `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text      `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text      `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text      `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text      `json:"foto_url_8"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -381,11 +441,17 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 	err := row.Scan(
 		&i.ID,
 		&i.CveProdIntegracion,
+		&i.Titulo,
 		&i.Descripcion,
 		&i.DescripcionExtendida,
 		&i.FotoUrl,
 		&i.FotoUrl2,
 		&i.FotoUrl3,
+		&i.FotoUrl4,
+		&i.FotoUrl5,
+		&i.FotoUrl6,
+		&i.FotoUrl7,
+		&i.FotoUrl8,
 		&i.FichaTecnica,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -399,7 +465,7 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 }
 
 const getProductoPadreByDescripcion = `-- name: GetProductoPadreByDescripcion :one
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -409,11 +475,17 @@ WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1
 type GetProductoPadreByDescripcionRow struct {
 	ID                   int32            `json:"id"`
 	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Titulo               pgtype.Text      `json:"titulo"`
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
 	FotoUrl2             pgtype.Text      `json:"foto_url2"`
 	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text      `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text      `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text      `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text      `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text      `json:"foto_url_8"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -430,11 +502,17 @@ func (q *Queries) GetProductoPadreByDescripcion(ctx context.Context, descripcion
 	err := row.Scan(
 		&i.ID,
 		&i.CveProdIntegracion,
+		&i.Titulo,
 		&i.Descripcion,
 		&i.DescripcionExtendida,
 		&i.FotoUrl,
 		&i.FotoUrl2,
 		&i.FotoUrl3,
+		&i.FotoUrl4,
+		&i.FotoUrl5,
+		&i.FotoUrl6,
+		&i.FotoUrl7,
+		&i.FotoUrl8,
 		&i.FichaTecnica,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -536,8 +614,44 @@ func (q *Queries) GetVarianteBySKU(ctx context.Context, sku string) (ProductosVa
 	return i, err
 }
 
+const getVarianteConExistencia = `-- name: GetVarianteConExistencia :one
+SELECT v.id, v.padre_id, v.sku, v.multiplos, v.permitir_backorder,
+       CAST(COALESCE(ei.existencia_total, 0::numeric) AS numeric(20,8)) AS existencia_total
+FROM productos_variantes v
+LEFT JOIN productos_padre p ON v.padre_id = p.id
+LEFT JOIN LATERAL (
+    SELECT SUM(existencia) AS existencia_total
+    FROM existencias_integracion
+    WHERE cve_prod = p.cve_prod_integracion
+) ei ON true
+WHERE v.id = $1 AND v.deleted_at IS NULL LIMIT 1
+`
+
+type GetVarianteConExistenciaRow struct {
+	ID                int32          `json:"id"`
+	PadreID           pgtype.Int4    `json:"padre_id"`
+	Sku               string         `json:"sku"`
+	Multiplos         pgtype.Int4    `json:"multiplos"`
+	PermitirBackorder pgtype.Bool    `json:"permitir_backorder"`
+	ExistenciaTotal   pgtype.Numeric `json:"existencia_total"`
+}
+
+func (q *Queries) GetVarianteConExistencia(ctx context.Context, id int32) (GetVarianteConExistenciaRow, error) {
+	row := q.db.QueryRow(ctx, getVarianteConExistencia, id)
+	var i GetVarianteConExistenciaRow
+	err := row.Scan(
+		&i.ID,
+		&i.PadreID,
+		&i.Sku,
+		&i.Multiplos,
+		&i.PermitirBackorder,
+		&i.ExistenciaTotal,
+	)
+	return i, err
+}
+
 const listarProductosPadre = `-- name: ListarProductosPadre :many
-SELECT p.id, p.cve_prod_integracion, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
+SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
 FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
@@ -547,11 +661,17 @@ WHERE p.deleted_at IS NULL
 type ListarProductosPadreRow struct {
 	ID                   int32            `json:"id"`
 	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Titulo               pgtype.Text      `json:"titulo"`
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
 	FotoUrl2             pgtype.Text      `json:"foto_url2"`
 	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text      `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text      `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text      `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text      `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text      `json:"foto_url_8"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
@@ -574,11 +694,17 @@ func (q *Queries) ListarProductosPadre(ctx context.Context) ([]ListarProductosPa
 		if err := rows.Scan(
 			&i.ID,
 			&i.CveProdIntegracion,
+			&i.Titulo,
 			&i.Descripcion,
 			&i.DescripcionExtendida,
 			&i.FotoUrl,
 			&i.FotoUrl2,
 			&i.FotoUrl3,
+			&i.FotoUrl4,
+			&i.FotoUrl5,
+			&i.FotoUrl6,
+			&i.FotoUrl7,
+			&i.FotoUrl8,
 			&i.FichaTecnica,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -601,6 +727,7 @@ func (q *Queries) ListarProductosPadre(ctx context.Context) ([]ListarProductosPa
 const listarVariantesPorPadre = `-- name: ListarVariantesPorPadre :many
 SELECT v.id, v.padre_id, v.sku, v.medida, v.precio_distribuidor, v.precio_lista, v.precio_publico, v.stock_actual, v.unidad_medida, v.lead_time_dias, v.especificaciones, v.categoria, v.subgrupo, v.modelo, v.tipo, v.marca, v.multiplos, v.permitir_backorder, v.created_at, v.updated_at, v.deleted_at, v.created_by, v.updated_by, v.deleted_by,
        p.descripcion AS padre_descripcion,
+       p.titulo AS padre_titulo,
        p.descripcion_extendida AS padre_descripcion_extendida,
        CAST(COALESCE(ei.existencia_total, 0::numeric) AS numeric(20,8)) AS existencia_total
 FROM productos_variantes v
@@ -639,6 +766,7 @@ type ListarVariantesPorPadreRow struct {
 	UpdatedBy                 pgtype.Int4      `json:"updated_by"`
 	DeletedBy                 pgtype.Int4      `json:"deleted_by"`
 	PadreDescripcion          pgtype.Text      `json:"padre_descripcion"`
+	PadreTitulo               pgtype.Text      `json:"padre_titulo"`
 	PadreDescripcionExtendida pgtype.Text      `json:"padre_descripcion_extendida"`
 	ExistenciaTotal           pgtype.Numeric   `json:"existencia_total"`
 }
@@ -679,6 +807,7 @@ func (q *Queries) ListarVariantesPorPadre(ctx context.Context, padreID pgtype.In
 			&i.UpdatedBy,
 			&i.DeletedBy,
 			&i.PadreDescripcion,
+			&i.PadreTitulo,
 			&i.PadreDescripcionExtendida,
 			&i.ExistenciaTotal,
 		); err != nil {

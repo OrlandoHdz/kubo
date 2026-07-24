@@ -4,11 +4,13 @@ import (
 	"github.com/OrlandoHdz/kubo/internal/api/handlers"
 	"github.com/OrlandoHdz/kubo/internal/auth"
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/pkg/email"
+	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
+func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg *utils.ConfigOSS, emailCfg *email.Config) {
 	userHandler := handlers.NewUsuarioHandler(queries)
 	authHandler := handlers.NewAuthHandler(queries)
 	solicitudHandler := handlers.NewSolicitudRegistroHandler(queries)
@@ -22,10 +24,16 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 	r.Static("/uploads", "./uploads")
 
 	clientesHandler := handlers.NewClientesHandler(queries)
-	productosHandler := handlers.NewProductosHandler(queries)
-	pedidosHandler := handlers.NewPedidosHandler(queries, pool)
+	productosHandler := handlers.NewProductosHandler(queries, ossCfg)
+	pedidosHandler := handlers.NewPedidosHandler(queries, pool, emailCfg)
+	backordersHandler := handlers.NewBackordersHandler(queries, pool, emailCfg)
 	pagosTarjetaHandler := handlers.NewPagosTarjetaHandler(queries)
 	spyWebhookHandler := handlers.NewSpyWebhookHandler(queries)
+	devolucionesHandler := handlers.NewDevolucionesHandler(queries, ossCfg, emailCfg)
+	pagoFacturasHandler := handlers.NewPagoFacturasHandler(queries, emailCfg)
+	estadoCuentaHandler := handlers.NewEstadoCuentaHandler(queries)
+	dashboardClienteHandler := handlers.NewDashboardClienteHandler(queries)
+	adminDashboardHandler := handlers.NewAdminDashboardHandler(queries)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -124,6 +132,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 		// Variantes (operaciones directas)
 		variantes := v1.Group("/variantes")
 		{
+			variantes.GET("/:id", productosHandler.ObtenerVariante)
 			variantes.PATCH("/:id", productosHandler.ActualizarVariante)
 			variantes.PATCH("/:id/stock", productosHandler.ActualizarStock)
 			variantes.DELETE("/:id", productosHandler.EliminarVariante)
@@ -147,10 +156,49 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool) {
 			pedidos.GET("/cliente/:cliente_id", pedidosHandler.ListarPorCliente)
 			pedidos.POST("", pedidosHandler.Crear)
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
-			pedidos.PATCH("/:id/backorder", pedidosHandler.ActualizarBackorder)
 			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
 			pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
 		}
+
+		// Backorders
+		backorders := v1.Group("/backorders")
+		{
+			backorders.GET("", backordersHandler.Listar)
+			backorders.GET("/:id", backordersHandler.Obtener)
+			backorders.GET("/cliente/:cliente_id", backordersHandler.ListarPorCliente)
+			backorders.POST("", backordersHandler.Crear)
+			backorders.PATCH("/:id/estado", backordersHandler.ActualizarEstado)
+			backorders.PATCH("/:id/detalles/:detalle_id/disponible", backordersHandler.MarcarDetalleDisponible)
+			backorders.POST("/:id/convertir", backordersHandler.ConvertirAPedido)
+		}
+
+		// Devoluciones y Garantías
+		devoluciones := v1.Group("/devoluciones")
+		{
+			devoluciones.GET("", devolucionesHandler.Listar)
+			devoluciones.GET("/cliente/:cliente_id", devolucionesHandler.ListarPorCliente)
+			devoluciones.POST("", devolucionesHandler.Crear)
+			devoluciones.PUT("/:id/estatus", devolucionesHandler.ActualizarEstatus)
+			devoluciones.PUT("/:id/cancelar", devolucionesHandler.Cancelar)
+		}
+
+		// Pago de Facturas
+		pagoFacturas := v1.Group("/pago-facturas")
+		{
+			pagoFacturas.GET("/emitidas", pagoFacturasHandler.ListarEmitidas)
+			pagoFacturas.POST("", pagoFacturasHandler.ProcesarPago)
+			pagoFacturas.GET("", pagoFacturasHandler.ListarPagadas)
+			pagoFacturas.GET("/:id", pagoFacturasHandler.ObtenerPagada)
+		}
+
+			// Estado de Cuenta
+		v1.GET("/estado-cuenta", estadoCuentaHandler.ObtenerEstadoCuenta)
+
+		// Dashboard Principal del Cliente
+		v1.GET("/dashboard-cliente", dashboardClienteHandler.ObtenerDashboard)
+
+		// Dashboard del Administrador
+		v1.GET("/admin/dashboard", adminDashboardHandler.ObtenerDashboard)
 
 		// Clientes (Sistema Local)
 		clientes := v1.Group("/clientes")

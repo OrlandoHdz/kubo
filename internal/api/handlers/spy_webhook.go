@@ -37,19 +37,19 @@ func (h *SpyWebhookHandler) SpyWebhook(c *gin.Context) {
 	bnrgHoraLocal := c.Query("BNRG_HORA_LOCAL")
 	bnrgCodigoEmisor := c.Query("BNRG_CODIGO_EMISOR")
 
-	log.Printf("BNRG_FOLIO=%s BNRG_MONTO_TRANS=%s BNRG_CODIGO_AUT=%s", bnrgFolio, bnrgMontoTrans, bnrgCodigoAut)
+	log.Printf("**** BNRG_FOLIO=%s BNRG_MONTO_TRANS=%s BNRG_CODIGO_AUT=%s", bnrgFolio, bnrgMontoTrans, bnrgCodigoAut)
 
 	if bnrgFolio == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "BNRG_FOLIO es requerido"})
 		return
 	}
 
-	pedido, err := h.queries.GetPedidoByFolio(c.Request.Context(), bnrgFolio)
-	if err != nil {
-		log.Printf("Error al buscar pedido por folio %s: %v", bnrgFolio, err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Pedido no encontrado con el folio proporcionado"})
-		return
-	}
+	// pedido, err := h.queries.GetPedidoByFolio(c.Request.Context(), bnrgFolio)
+	// if err != nil {
+	// 	log.Printf("Error al buscar pedido por folio %s: %v", bnrgFolio, err)
+	// 	c.JSON(http.StatusNotFound, gin.H{"error": "Pedido no encontrado con el folio proporcionado"})
+	// 	return
+	// }
 
 	var montoTrans pgtype.Numeric
 	if bnrgMontoTrans != "" {
@@ -88,8 +88,8 @@ func (h *SpyWebhookHandler) SpyWebhook(c *gin.Context) {
 		BnrgCodigoProc:   pgtype.Text{String: bnrgCodigoProc, Valid: bnrgCodigoProc != ""},
 		BnrgHoraLocal:    horaLocal,
 		BnrgCodigoEmisor: pgtype.Text{String: bnrgCodigoEmisor, Valid: bnrgCodigoEmisor != ""},
-		PedidoID:         pgtype.Int4{Int32: pedido.ID, Valid: true},
-		CreatedBy:        pgtype.Int4{Valid: false},
+		// PedidoID:         pgtype.Int4{Int32: pedido.ID, Valid: true},
+		CreatedBy: pgtype.Int4{Valid: false},
 	}
 
 	transaccion, err := h.queries.CrearTransaccionBanregio(c.Request.Context(), params)
@@ -102,7 +102,7 @@ func (h *SpyWebhookHandler) SpyWebhook(c *gin.Context) {
 	log.Printf("Transacción BanRegio guardada: ID=%d, Folio=%s", transaccion.ID, transaccion.BnrgFolio.String)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":       "ok",
+		"status":         "ok",
 		"transaccion_id": transaccion.ID,
 	})
 }

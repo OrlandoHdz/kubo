@@ -1,0 +1,11 @@
+smtp_host: "smtp.us.alibabacloud.com"
+smtp_port: "465"
+username: "ventas@arsenalwelds.com"
+password: "wKy0YiRfcQSkRPdk"
+from_name: "Arsenal Welds"
+default_recipients:
+  - "orlando.hernandez@sisamex.com.mx"
+  - "orlando.hdz@gmail.com"
+  - "superali65@yahoo.com.mx"
+  - "anuaraliruiz115@gmail.com"
+templates_dir: "templates/email"

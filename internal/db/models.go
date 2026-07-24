@@ -8,6 +8,43 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Backorder struct {
+	ID                  int32            `json:"id"`
+	Folio               string           `json:"folio"`
+	ClienteID           pgtype.Int4      `json:"cliente_id"`
+	UsuarioID           pgtype.Int4      `json:"usuario_id"`
+	EstadoBackorder     string           `json:"estado_backorder"`
+	MetodoPago          string           `json:"metodo_pago"`
+	Subtotal            pgtype.Numeric   `json:"subtotal"`
+	Iva                 pgtype.Numeric   `json:"iva"`
+	TotalOrden          pgtype.Numeric   `json:"total_orden"`
+	GuiaBackorder       pgtype.Text      `json:"guia_backorder"`
+	NotasAdminBackorder pgtype.Text      `json:"notas_admin_backorder"`
+	PedidoOrigenID      pgtype.Int4      `json:"pedido_origen_id"`
+	FechaBackorder      pgtype.Timestamp `json:"fecha_backorder"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	UpdatedAt           pgtype.Timestamp `json:"updated_at"`
+	DeletedAt           pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy           pgtype.Int4      `json:"created_by"`
+	UpdatedBy           pgtype.Int4      `json:"updated_by"`
+	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+}
+
+type BackorderDetalle struct {
+	ID                     int32            `json:"id"`
+	BackorderID            pgtype.Int4      `json:"backorder_id"`
+	VarianteID             pgtype.Int4      `json:"variante_id"`
+	Cantidad               int32            `json:"cantidad"`
+	PrecioUnitarioAplicado pgtype.Numeric   `json:"precio_unitario_aplicado"`
+	Disponible             bool             `json:"disponible"`
+	CreatedAt              pgtype.Timestamp `json:"created_at"`
+	UpdatedAt              pgtype.Timestamp `json:"updated_at"`
+	DeletedAt              pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy              pgtype.Int4      `json:"created_by"`
+	UpdatedBy              pgtype.Int4      `json:"updated_by"`
+	DeletedBy              pgtype.Int4      `json:"deleted_by"`
+}
+
 type Cliente struct {
 	ID                    int32            `json:"id"`
 	NombreComercial       string           `json:"nombre_comercial"`
@@ -79,6 +116,26 @@ type CreditosIntegracion struct {
 	Aqo       pgtype.Text      `json:"aqo"`
 	Usuario   pgtype.Int4      `json:"usuario"`
 	Trans     pgtype.Int4      `json:"trans"`
+}
+
+type DevolucionesGarantia struct {
+	ID                int32            `json:"id"`
+	Folio             string           `json:"folio"`
+	ClienteID         pgtype.Int4      `json:"cliente_id"`
+	PedidoFolio       string           `json:"pedido_folio"`
+	Tipo              string           `json:"tipo"`
+	NumerosParte      string           `json:"numeros_parte"`
+	NotaCliente       string           `json:"nota_cliente"`
+	Evidencias        string           `json:"evidencias"`
+	Estatus           string           `json:"estatus"`
+	NotaAdministrador string           `json:"nota_administrador"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
+	DeletedAt         pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy         pgtype.Int4      `json:"created_by"`
+	UpdatedBy         pgtype.Int4      `json:"updated_by"`
+	DeletedBy         pgtype.Int4      `json:"deleted_by"`
+	Cantidades        string           `json:"cantidades"`
 }
 
 type ExistenciasIntegracion struct {
@@ -162,29 +219,57 @@ type FacturasIntegracion struct {
 	Ieps      pgtype.Numeric   `json:"ieps"`
 }
 
+type HistorialFacturasPagada struct {
+	ID                 int32            `json:"id"`
+	FacturaID          int32            `json:"factura_id"`
+	ClienteID          int32            `json:"cliente_id"`
+	NoFactura          string           `json:"no_factura"`
+	MontoPagado        pgtype.Numeric   `json:"monto_pagado"`
+	MetodoPago         string           `json:"metodo_pago"`
+	TarjetaTerminacion string           `json:"tarjeta_terminacion"`
+	RespuestaSimulada  string           `json:"respuesta_simulada"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	CreatedBy          pgtype.Int4      `json:"created_by"`
+}
+
+type PagosFactura struct {
+	ID                 int32            `json:"id"`
+	ClienteID          int32            `json:"cliente_id"`
+	MetodoPago         string           `json:"metodo_pago"`
+	TarjetaTerminacion string           `json:"tarjeta_terminacion"`
+	MontoTotal         pgtype.Numeric   `json:"monto_total"`
+	RespuestaSimulada  string           `json:"respuesta_simulada"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	CreatedBy          pgtype.Int4      `json:"created_by"`
+}
+
+type PagosFacturasDetalle struct {
+	ID          int32          `json:"id"`
+	PagoID      int32          `json:"pago_id"`
+	FacturaID   int32          `json:"factura_id"`
+	NoFactura   string         `json:"no_factura"`
+	MontoPagado pgtype.Numeric `json:"monto_pagado"`
+}
+
 type Pedido struct {
-	ID                  int32            `json:"id"`
-	Folio               string           `json:"folio"`
-	ClienteID           pgtype.Int4      `json:"cliente_id"`
-	UsuarioID           pgtype.Int4      `json:"usuario_id"`
-	Estado              string           `json:"estado"`
-	MetodoPago          string           `json:"metodo_pago"`
-	Subtotal            pgtype.Numeric   `json:"subtotal"`
-	Iva                 pgtype.Numeric   `json:"iva"`
-	TotalOrden          pgtype.Numeric   `json:"total_orden"`
-	EsBackorder         pgtype.Bool      `json:"es_backorder"`
-	GuiaBackorder       pgtype.Text      `json:"guia_backorder"`
-	NotasAdminBackorder pgtype.Text      `json:"notas_admin_backorder"`
-	EstadoBackorder     string           `json:"estado_backorder"`
-	Guia                pgtype.Text      `json:"guia"`
-	NotasAdmin          pgtype.Text      `json:"notas_admin"`
-	FechaPedido         pgtype.Timestamp `json:"fecha_pedido"`
-	CreatedAt           pgtype.Timestamp `json:"created_at"`
-	UpdatedAt           pgtype.Timestamp `json:"updated_at"`
-	DeletedAt           pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy           pgtype.Int4      `json:"created_by"`
-	UpdatedBy           pgtype.Int4      `json:"updated_by"`
-	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	ID          int32            `json:"id"`
+	Folio       string           `json:"folio"`
+	ClienteID   pgtype.Int4      `json:"cliente_id"`
+	UsuarioID   pgtype.Int4      `json:"usuario_id"`
+	Estado      string           `json:"estado"`
+	MetodoPago  string           `json:"metodo_pago"`
+	Subtotal    pgtype.Numeric   `json:"subtotal"`
+	Iva         pgtype.Numeric   `json:"iva"`
+	TotalOrden  pgtype.Numeric   `json:"total_orden"`
+	Guia        pgtype.Text      `json:"guia"`
+	NotasAdmin  pgtype.Text      `json:"notas_admin"`
+	FechaPedido pgtype.Timestamp `json:"fecha_pedido"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy   pgtype.Int4      `json:"created_by"`
+	UpdatedBy   pgtype.Int4      `json:"updated_by"`
+	DeletedBy   pgtype.Int4      `json:"deleted_by"`
 }
 
 type PedidoDetalle struct {
@@ -193,7 +278,6 @@ type PedidoDetalle struct {
 	VarianteID             pgtype.Int4      `json:"variante_id"`
 	Cantidad               int32            `json:"cantidad"`
 	PrecioUnitarioAplicado pgtype.Numeric   `json:"precio_unitario_aplicado"`
-	TipoRegistro           string           `json:"tipo_registro"`
 	CreatedAt              pgtype.Timestamp `json:"created_at"`
 	UpdatedAt              pgtype.Timestamp `json:"updated_at"`
 	DeletedAt              pgtype.Timestamp `json:"deleted_at"`
@@ -221,12 +305,18 @@ type ProductosIntegracion struct {
 type ProductosPadre struct {
 	ID                   int32            `json:"id"`
 	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Titulo               pgtype.Text      `json:"titulo"`
 	Descripcion          pgtype.Text      `json:"descripcion"`
 	FotoUrl              pgtype.Text      `json:"foto_url"`
 	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
 	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
 	FotoUrl2             pgtype.Text      `json:"foto_url2"`
 	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text      `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text      `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text      `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text      `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text      `json:"foto_url_8"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
 	DeletedAt            pgtype.Timestamp `json:"deleted_at"`

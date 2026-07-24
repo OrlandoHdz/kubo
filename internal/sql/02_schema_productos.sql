@@ -1,12 +1,18 @@
 CREATE TABLE productos_padre (
     id SERIAL PRIMARY KEY,
     cve_prod_integracion VARCHAR(20) REFERENCES productos_integracion(cve_prod),
+    titulo VARCHAR(400),
     descripcion VARCHAR(200),
     foto_url TEXT,
     ficha_tecnica TEXT, -- Para PDFs y Hojas de Seguridad [cite: 149]
     descripcion_extendida TEXT,
     foto_url2 TEXT,
     foto_url_3 TEXT,
+    foto_url_4 TEXT,
+    foto_url_5 TEXT,
+    foto_url_6 TEXT,
+    foto_url_7 TEXT,
+    foto_url_8 TEXT,
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

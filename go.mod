@@ -4,10 +4,14 @@ go 1.26.2
 
 require (
 	github.com/SebastiaanKlippert/go-foxpro-dbf v1.2.0
+	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
+	github.com/chai2010/webp v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	golang.org/x/crypto v0.50.0
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -38,6 +42,7 @@ require (
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
