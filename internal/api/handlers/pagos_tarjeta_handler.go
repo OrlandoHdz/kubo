@@ -77,6 +77,35 @@ func (h *PagosTarjetaHandler) ListarPorCliente(c *gin.Context) {
 	c.JSON(http.StatusOK, transacciones)
 }
 
+func (h *PagosTarjetaHandler) Verificar(c *gin.Context) {
+	folio := c.Query("folio")
+	if folio == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "folio es requerido"})
+		return
+	}
+
+	transaccion, err := h.queries.GetTransaccionBanregioPorFolio(c.Request.Context(), pgtype.Text{String: folio, Valid: true})
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"exists":      false,
+			"codigo_proc": "",
+			"folio":       folio,
+		})
+		return
+	}
+
+	codigoProc := ""
+	if transaccion.BnrgCodigoProc.Valid {
+		codigoProc = transaccion.BnrgCodigoProc.String
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"exists":      true,
+		"codigo_proc": codigoProc,
+		"folio":       transaccion.BnrgFolio.String,
+	})
+}
+
 func (h *PagosTarjetaHandler) Eliminar(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

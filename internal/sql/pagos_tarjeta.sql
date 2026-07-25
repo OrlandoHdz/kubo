@@ -33,6 +33,10 @@ JOIN pedidos p ON t.pedido_id = p.id
 WHERE p.cliente_id = $1 AND t.deleted_at IS NULL AND p.deleted_at IS NULL
 ORDER BY t.created_at DESC;
 
+-- name: GetTransaccionBanregioPorFolio :one
+SELECT * FROM transacciones_banregio
+WHERE bnrg_folio = $1 AND deleted_at IS NULL LIMIT 1;
+
 -- name: SoftDeleteTransaccionBanregio :exec
 UPDATE transacciones_banregio
 SET

@@ -148,6 +148,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			pagosTarjeta.DELETE("/:id", pagosTarjetaHandler.Eliminar)
 		}
 
+		v1.GET("/transacciones-banregio/verificar", pagosTarjetaHandler.Verificar)
+
 		// Pedidos
 		pedidos := v1.Group("/pedidos")
 		{
