@@ -633,10 +633,12 @@ func (c *Config) SendPagoFacturaNotification(pf PagoFacturaData, clientEmail str
 	recipients := []string{clientEmail}
 	recipients = append(recipients, c.DefaultRecipients...)
 
-	log.Printf("Email: enviando notificación de pago de facturas a %d destinatarios", len(recipients))
+	log.Printf("Email: enviando notificación de pago de facturas a %d destinatarios (primero: %s)", len(recipients), clientEmail)
 	if err := c.SendToMultiple(recipients, subject, body); err != nil {
 		log.Printf("Email: error al enviar notificación de pago de facturas: %v", err)
+		return
 	}
+	log.Printf("Email: notificación de pago de facturas enviada correctamente a %s y %d copias", clientEmail, len(c.DefaultRecipients))
 }
 
 type DevolucionData struct {

@@ -175,7 +175,11 @@ func (h *PagoFacturasHandler) ProcesarPago(c *gin.Context) {
 	}
 
 	if h.emailCfg != nil {
+		log.Printf("PagoFacturas: iniciando envío de correo para cliente %d, monto %.2f, método %s, terminación %s, %d facturas",
+			clienteID, montoTotal, req.MetodoPago, terminacion, len(detallesData))
 		go h.notificarPagoFactura(context.Background(), clienteID, montoTotal, req.MetodoPago, terminacion, detallesData)
+	} else {
+		log.Printf("PagoFacturas: emailCfg es nil, NO se enviará correo para cliente %d", clienteID)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -218,7 +222,10 @@ func (h *PagoFacturasHandler) notificarPagoFactura(ctx context.Context, clienteI
 		Facturas:    facturas,
 	}
 
+	log.Printf("PagoFacturas: enviando correo a %s (%s), %d facturas, total %s",
+		usuarios[0].Email, cliente.NombreComercial, len(facturas), formatPrice(montoTotal))
 	h.emailCfg.SendPagoFacturaNotification(data, usuarios[0].Email)
+	log.Printf("PagoFacturas: envio de correo completado para %s", usuarios[0].Email)
 }
 
 func (h *PagoFacturasHandler) ListarPagadas(c *gin.Context) {
