@@ -34,4 +34,6 @@ go.work.sum
 # .idea/
 # .vscode/
 configs/cloud/alibaba.yaml
+Notas.txt
+
 
