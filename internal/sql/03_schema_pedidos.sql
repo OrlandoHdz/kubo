@@ -11,6 +11,7 @@ CREATE TABLE pedidos (
     total_orden DECIMAL(12, 2) NOT NULL, 
     guia VARCHAR(100) DEFAULT '',
     notas_admin VARCHAR(250) DEFAULT '',
+    has_backorder BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- Campos de Auditoría
@@ -31,6 +32,8 @@ CREATE TABLE pedido_detalles (
     variante_id INTEGER REFERENCES productos_variantes(id),
     cantidad INTEGER NOT NULL,
     precio_unitario_aplicado DECIMAL(12, 2) NOT NULL,
+    shipped_quantity INTEGER NOT NULL DEFAULT 0,
+    backorder_quantity INTEGER NOT NULL DEFAULT 0,
 
     -- Campos de Auditoría
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +43,19 @@ CREATE TABLE pedido_detalles (
     created_by INTEGER REFERENCES usuarios(id),
     updated_by INTEGER REFERENCES usuarios(id),
     deleted_by INTEGER REFERENCES usuarios(id)
+);
+
+-- Historial de cambios/modificaciones en pedidos (embarques parciales, backorders, etc.)
+CREATE TABLE order_modifications (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES pedidos(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES usuarios(id),
+    item_id INTEGER REFERENCES pedido_detalles(id) ON DELETE CASCADE,
+    original_quantity INTEGER NOT NULL,
+    shipped_quantity INTEGER NOT NULL,
+    backorder_quantity INTEGER NOT NULL DEFAULT 0,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Backorders independientes [cite: 123]

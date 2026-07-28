@@ -232,6 +232,18 @@ type HistorialFacturasPagada struct {
 	CreatedBy          pgtype.Int4      `json:"created_by"`
 }
 
+type OrderModification struct {
+	ID                int32            `json:"id"`
+	OrderID           pgtype.Int4      `json:"order_id"`
+	UserID            pgtype.Int4      `json:"user_id"`
+	ItemID            pgtype.Int4      `json:"item_id"`
+	OriginalQuantity  int32            `json:"original_quantity"`
+	ShippedQuantity   int32            `json:"shipped_quantity"`
+	BackorderQuantity int32            `json:"backorder_quantity"`
+	Notes             pgtype.Text      `json:"notes"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+}
+
 type PagosFactura struct {
 	ID                 int32            `json:"id"`
 	ClienteID          int32            `json:"cliente_id"`
@@ -252,24 +264,25 @@ type PagosFacturasDetalle struct {
 }
 
 type Pedido struct {
-	ID          int32            `json:"id"`
-	Folio       string           `json:"folio"`
-	ClienteID   pgtype.Int4      `json:"cliente_id"`
-	UsuarioID   pgtype.Int4      `json:"usuario_id"`
-	Estado      string           `json:"estado"`
-	MetodoPago  string           `json:"metodo_pago"`
-	Subtotal    pgtype.Numeric   `json:"subtotal"`
-	Iva         pgtype.Numeric   `json:"iva"`
-	TotalOrden  pgtype.Numeric   `json:"total_orden"`
-	Guia        pgtype.Text      `json:"guia"`
-	NotasAdmin  pgtype.Text      `json:"notas_admin"`
-	FechaPedido pgtype.Timestamp `json:"fecha_pedido"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
-	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy   pgtype.Int4      `json:"created_by"`
-	UpdatedBy   pgtype.Int4      `json:"updated_by"`
-	DeletedBy   pgtype.Int4      `json:"deleted_by"`
+	ID           int32            `json:"id"`
+	Folio        string           `json:"folio"`
+	ClienteID    pgtype.Int4      `json:"cliente_id"`
+	UsuarioID    pgtype.Int4      `json:"usuario_id"`
+	Estado       string           `json:"estado"`
+	MetodoPago   string           `json:"metodo_pago"`
+	Subtotal     pgtype.Numeric   `json:"subtotal"`
+	Iva          pgtype.Numeric   `json:"iva"`
+	TotalOrden   pgtype.Numeric   `json:"total_orden"`
+	Guia         pgtype.Text      `json:"guia"`
+	NotasAdmin   pgtype.Text      `json:"notas_admin"`
+	HasBackorder bool             `json:"has_backorder"`
+	FechaPedido  pgtype.Timestamp `json:"fecha_pedido"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+	DeletedAt    pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy    pgtype.Int4      `json:"created_by"`
+	UpdatedBy    pgtype.Int4      `json:"updated_by"`
+	DeletedBy    pgtype.Int4      `json:"deleted_by"`
 }
 
 type PedidoDetalle struct {
@@ -278,6 +291,8 @@ type PedidoDetalle struct {
 	VarianteID             pgtype.Int4      `json:"variante_id"`
 	Cantidad               int32            `json:"cantidad"`
 	PrecioUnitarioAplicado pgtype.Numeric   `json:"precio_unitario_aplicado"`
+	ShippedQuantity        int32            `json:"shipped_quantity"`
+	BackorderQuantity      int32            `json:"backorder_quantity"`
 	CreatedAt              pgtype.Timestamp `json:"created_at"`
 	UpdatedAt              pgtype.Timestamp `json:"updated_at"`
 	DeletedAt              pgtype.Timestamp `json:"deleted_at"`

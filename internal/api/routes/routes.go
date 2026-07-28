@@ -160,6 +160,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			pedidos.PATCH("/:id/estado", pedidosHandler.ActualizarEstado)
 			pedidos.PATCH("/:id/detalles/:detalle_id/cancelar", pedidosHandler.CancelarDetalle)
 			pedidos.POST("/:id/agregar-productos", pedidosHandler.AgregarProductos)
+			pedidos.POST("/:id/ship", pedidosHandler.ShipOrder)
 		}
 
 		// Backorders

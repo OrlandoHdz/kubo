@@ -120,6 +120,38 @@ func (q *Queries) GetTransaccionBanregio(ctx context.Context, id int32) (Transac
 	return i, err
 }
 
+const getTransaccionBanregioPorFolio = `-- name: GetTransaccionBanregioPorFolio :one
+SELECT id, bnrg_monto_trans, bnrg_id_afiliacion, bnrg_fecha_local, bnrg_codigo_aut, bnrg_folio, bnrg_texto, bnrg_referencia, bnrg_id_mediop, bnrg_codigo_proc, bnrg_hora_local, bnrg_codigo_emisor, pedido_id, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM transacciones_banregio
+WHERE bnrg_folio = $1 AND deleted_at IS NULL LIMIT 1
+`
+
+func (q *Queries) GetTransaccionBanregioPorFolio(ctx context.Context, bnrgFolio pgtype.Text) (TransaccionesBanregio, error) {
+	row := q.db.QueryRow(ctx, getTransaccionBanregioPorFolio, bnrgFolio)
+	var i TransaccionesBanregio
+	err := row.Scan(
+		&i.ID,
+		&i.BnrgMontoTrans,
+		&i.BnrgIDAfiliacion,
+		&i.BnrgFechaLocal,
+		&i.BnrgCodigoAut,
+		&i.BnrgFolio,
+		&i.BnrgTexto,
+		&i.BnrgReferencia,
+		&i.BnrgIDMediop,
+		&i.BnrgCodigoProc,
+		&i.BnrgHoraLocal,
+		&i.BnrgCodigoEmisor,
+		&i.PedidoID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const listarTransaccionesBanregio = `-- name: ListarTransaccionesBanregio :many
 SELECT id, bnrg_monto_trans, bnrg_id_afiliacion, bnrg_fecha_local, bnrg_codigo_aut, bnrg_folio, bnrg_texto, bnrg_referencia, bnrg_id_mediop, bnrg_codigo_proc, bnrg_hora_local, bnrg_codigo_emisor, pedido_id, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM transacciones_banregio
 WHERE deleted_at IS NULL
@@ -236,38 +268,6 @@ func (q *Queries) ListarTransaccionesPorCliente(ctx context.Context, clienteID p
 		return nil, err
 	}
 	return items, nil
-}
-
-const getTransaccionBanregioPorFolio = `-- name: GetTransaccionBanregioPorFolio :one
-SELECT id, bnrg_monto_trans, bnrg_id_afiliacion, bnrg_fecha_local, bnrg_codigo_aut, bnrg_folio, bnrg_texto, bnrg_referencia, bnrg_id_mediop, bnrg_codigo_proc, bnrg_hora_local, bnrg_codigo_emisor, pedido_id, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM transacciones_banregio
-WHERE bnrg_folio = $1 AND deleted_at IS NULL LIMIT 1
-`
-
-func (q *Queries) GetTransaccionBanregioPorFolio(ctx context.Context, bnrgFolio pgtype.Text) (TransaccionesBanregio, error) {
-	row := q.db.QueryRow(ctx, getTransaccionBanregioPorFolio, bnrgFolio)
-	var i TransaccionesBanregio
-	err := row.Scan(
-		&i.ID,
-		&i.BnrgMontoTrans,
-		&i.BnrgIDAfiliacion,
-		&i.BnrgFechaLocal,
-		&i.BnrgCodigoAut,
-		&i.BnrgFolio,
-		&i.BnrgTexto,
-		&i.BnrgReferencia,
-		&i.BnrgIDMediop,
-		&i.BnrgCodigoProc,
-		&i.BnrgHoraLocal,
-		&i.BnrgCodigoEmisor,
-		&i.PedidoID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-		&i.CreatedBy,
-		&i.UpdatedBy,
-		&i.DeletedBy,
-	)
-	return i, err
 }
 
 const softDeleteTransaccionBanregio = `-- name: SoftDeleteTransaccionBanregio :exec

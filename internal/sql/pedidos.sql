@@ -33,7 +33,7 @@ SELECT * FROM pedidos
 WHERE folio = $1 AND deleted_at IS NULL LIMIT 1;
 
 -- name: ListarPedidosDetalle :many
-SELECT d.id, d.pedido_id, d.variante_id, d.cantidad, d.precio_unitario_aplicado, d.created_at, d.updated_at, d.deleted_at, d.created_by, d.updated_by, d.deleted_by,
+SELECT d.id, d.pedido_id, d.variante_id, d.cantidad, d.precio_unitario_aplicado, d.shipped_quantity, d.backorder_quantity, d.created_at, d.updated_at, d.deleted_at, d.created_by, d.updated_by, d.deleted_by,
        v.sku AS variante_sku,
        p.descripcion AS padre_descripcion,
        p.descripcion_extendida AS padre_descripcion_extendida,
@@ -95,3 +95,43 @@ WHERE pd.variante_id = $1
   AND p.estado IN ('Pendiente', 'En Proceso') -- Estados que reservan stock
   AND pd.deleted_at IS NULL 
   AND p.deleted_at IS NULL;
+
+-- name: ActualizarEnvioPedidoDetalle :one
+UPDATE pedido_detalles
+SET
+    shipped_quantity = $2,
+    backorder_quantity = $3,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: CrearModificacionPedido :one
+INSERT INTO order_modifications (
+    order_id,
+    user_id,
+    item_id,
+    original_quantity,
+    shipped_quantity,
+    backorder_quantity,
+    notes
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7
+) RETURNING *;
+
+-- name: ActualizarHasBackorderPedido :one
+UPDATE pedidos
+SET
+    has_backorder = $2,
+    estado = $3,
+    guia = $5,
+    notas_admin = $6,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $4
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
+-- name: ListarModificacionesPorPedido :many
+SELECT * FROM order_modifications
+WHERE order_id = $1
+ORDER BY created_at DESC;
