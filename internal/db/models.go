@@ -242,6 +242,7 @@ type OrderModification struct {
 	BackorderQuantity int32            `json:"backorder_quantity"`
 	Notes             pgtype.Text      `json:"notes"`
 	CreatedAt         pgtype.Timestamp `json:"created_at"`
+	BackorderID       pgtype.Int4      `json:"backorder_id"`
 }
 
 type PagosFactura struct {

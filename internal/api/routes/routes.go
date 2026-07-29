@@ -163,6 +163,9 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			pedidos.POST("/:id/ship", pedidosHandler.ShipOrder)
 		}
 
+		// Auditoría de Pedidos (modificaciones con backorder)
+		v1.GET("/pedidos/modificaciones", pedidosHandler.ListarModificaciones)
+
 		// Backorders
 		backorders := v1.Group("/backorders")
 		{

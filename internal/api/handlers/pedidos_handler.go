@@ -381,11 +381,15 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
 		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
-		importe := precio * float64(d.Cantidad)
+		cantidad := d.Cantidad
+		if d.ShippedQuantity > 0 {
+			cantidad = d.ShippedQuantity
+		}
+		importe := precio * float64(cantidad)
 		orderItems = append(orderItems, email.OrderItemData{
 			SKU:         d.VarianteSku.String,
 			Descripcion: d.PadreDescripcion.String,
-			Cantidad:    d.Cantidad,
+			Cantidad:    cantidad,
 			Precio:      formatPrice(precio),
 			Importe:     formatPrice(importe),
 		})
@@ -552,8 +556,9 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 		detalleMap[d.ID] = d
 	}
 
-	hasBackorder := false
-	allShipped := true
+	var shippedSubtotal float64
+	var backorderSubtotal float64
+	var hasBackorder bool
 	var results []ShipItemResult
 
 	for _, item := range input.Items {
@@ -562,6 +567,8 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Detalle %d no pertenece a este pedido", item.DetalleID)})
 			return
 		}
+
+		precio, _ := utils.NumericToFloat64(detalle.PrecioUnitarioAplicado)
 
 		if item.ShippedQuantity < 0 || item.ShippedQuantity > detalle.Cantidad {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -574,6 +581,8 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 		}
 
 		backorderQty := detalle.Cantidad - item.ShippedQuantity
+		shippedSubtotal = shippedSubtotal + precio*float64(item.ShippedQuantity)
+		backorderSubtotal = backorderSubtotal + precio*float64(backorderQty)
 
 		_, err := qtx.ActualizarEnvioPedidoDetalle(c.Request.Context(), db.ActualizarEnvioPedidoDetalleParams{
 			ID:                item.DetalleID,
@@ -586,27 +595,9 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 			return
 		}
 
-		_, err = qtx.CrearModificacionPedido(c.Request.Context(), db.CrearModificacionPedidoParams{
-			OrderID:           pgtype.Int4{Int32: int32(id), Valid: true},
-			UserID:            pgtype.Int4{Int32: userID, Valid: userID != 0},
-			ItemID:            pgtype.Int4{Int32: item.DetalleID, Valid: true},
-			OriginalQuantity:  detalle.Cantidad,
-			ShippedQuantity:   item.ShippedQuantity,
-			BackorderQuantity: backorderQty,
-			Notes:             pgtype.Text{String: input.NotasAdmin, Valid: input.NotasAdmin != ""},
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al registrar auditoría: " + err.Error()})
-			return
-		}
-
 		if backorderQty > 0 {
 			hasBackorder = true
 		}
-		if item.ShippedQuantity == 0 {
-			allShipped = false
-		}
-
 		results = append(results, ShipItemResult{
 			DetalleID:        item.DetalleID,
 			Producto:         detalle.PadreDescripcion.String,
@@ -617,13 +608,88 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 		})
 	}
 
-	nuevoEstado := "En Transito"
+	shippedIVA := shippedSubtotal * 0.16
+	shippedTotal := shippedSubtotal + shippedIVA
+	backorderIVA := backorderSubtotal * 0.16
+	backorderTotal := backorderSubtotal + backorderIVA
+
+	var backorderID pgtype.Int4
+	var backorderIDForEmail int32
 	if hasBackorder {
-		nuevoEstado = "En Transito"
+		backorderFolio := fmt.Sprintf("BKO-%d", time.Now().Unix())
+		bo, err := qtx.CrearBackorder(c.Request.Context(), db.CrearBackorderParams{
+			Folio:               backorderFolio,
+			ClienteID:           pedido.ClienteID,
+			UsuarioID:           pedido.UsuarioID,
+			EstadoBackorder:     "Pendiente",
+			MetodoPago:          pedido.MetodoPago,
+			Subtotal:            utils.ToNumeric(backorderSubtotal),
+			Iva:                 utils.ToNumeric(backorderIVA),
+			TotalOrden:          utils.ToNumeric(backorderTotal),
+			GuiaBackorder:       pgtype.Text{String: input.Guia, Valid: input.Guia != ""},
+			NotasAdminBackorder: pgtype.Text{String: input.NotasAdmin, Valid: input.NotasAdmin != ""},
+			PedidoOrigenID:      pgtype.Int4{Int32: int32(id), Valid: true},
+			CreatedBy:           pgtype.Int4{Int32: userID, Valid: userID != 0},
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear backorder: " + err.Error()})
+			return
+		}
+		backorderID = pgtype.Int4{Int32: bo.ID, Valid: true}
+		backorderIDForEmail = bo.ID
+
+		for _, item := range input.Items {
+			detalle := detalleMap[item.DetalleID]
+			backorderQty := detalle.Cantidad - item.ShippedQuantity
+			if backorderQty > 0 {
+				_, err := qtx.CrearBackorderDetalle(c.Request.Context(), db.CrearBackorderDetalleParams{
+					BackorderID:            pgtype.Int4{Int32: bo.ID, Valid: true},
+					VarianteID:             detalle.VarianteID,
+					Cantidad:               backorderQty,
+					PrecioUnitarioAplicado: detalle.PrecioUnitarioAplicado,
+					CreatedBy:              pgtype.Int4{Int32: userID, Valid: userID != 0},
+				})
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear detalle de backorder: " + err.Error()})
+					return
+				}
+			}
+		}
+
 	}
-	if hasBackorder && !allShipped {
-		nuevoEstado = "En Transito"
+
+	for _, item := range input.Items {
+		detalle := detalleMap[item.DetalleID]
+		backorderQty := detalle.Cantidad - item.ShippedQuantity
+		_, err := qtx.CrearModificacionPedido(c.Request.Context(), db.CrearModificacionPedidoParams{
+			OrderID:           pgtype.Int4{Int32: int32(id), Valid: true},
+			UserID:            pgtype.Int4{Int32: userID, Valid: userID != 0},
+			ItemID:            pgtype.Int4{Int32: item.DetalleID, Valid: true},
+			OriginalQuantity:  detalle.Cantidad,
+			ShippedQuantity:   item.ShippedQuantity,
+			BackorderQuantity: backorderQty,
+			Notes:             pgtype.Text{String: input.NotasAdmin, Valid: input.NotasAdmin != ""},
+			BackorderID:       backorderID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al registrar auditoría: " + err.Error()})
+			return
+		}
 	}
+
+	_, err = qtx.ActualizarTotalesPedido(c.Request.Context(), db.ActualizarTotalesPedidoParams{
+		ID:         int32(id),
+		Subtotal:   utils.ToNumeric(shippedSubtotal),
+		Iva:        utils.ToNumeric(shippedIVA),
+		TotalOrden: utils.ToNumeric(shippedTotal),
+		UpdatedBy:  pgtype.Int4{Int32: userID, Valid: userID != 0},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar totales del pedido: " + err.Error()})
+		return
+	}
+
+	nuevoEstado := "En Transito"
 
 	_, err = qtx.ActualizarHasBackorderPedido(c.Request.Context(), db.ActualizarHasBackorderPedidoParams{
 		ID:           int32(id),
@@ -645,6 +711,9 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 
 	if h.emailCfg != nil {
 		go h.notificarEstadoPedido(context.Background(), int32(id), nuevoEstado, input.NotasAdmin, input.Guia)
+		if backorderIDForEmail != 0 {
+			go h.notificarBackorder(context.Background(), backorderIDForEmail, pedido)
+		}
 	}
 
 	resumen := gin.H{
@@ -725,6 +794,80 @@ func (h *PedidosHandler) CancelarDetalle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Detalle cancelado"})
+}
+
+func (h *PedidosHandler) notificarBackorder(ctx context.Context, backorderID int32, pedido db.Pedido) {
+	log.Printf("Email: notificarBackorder iniciado para backorder %d", backorderID)
+
+	bo, err := h.queries.GetBackorder(ctx, backorderID)
+	if err != nil {
+		log.Printf("Email: error al obtener backorder %d: %v", backorderID, err)
+		return
+	}
+
+	if !pedido.ClienteID.Valid {
+		log.Printf("Email: pedido %s sin cliente_id", pedido.Folio)
+		return
+	}
+
+	cliente, err := h.queries.GetCliente(ctx, pedido.ClienteID.Int32)
+	if err != nil {
+		log.Printf("Email: error al obtener cliente %d: %v", pedido.ClienteID.Int32, err)
+		return
+	}
+
+	detalles, err := h.queries.GetBackorderDetalles(ctx, pgtype.Int4{Int32: backorderID, Valid: true})
+	if err != nil {
+		log.Printf("Email: error al obtener detalles del backorder %d: %v", backorderID, err)
+		return
+	}
+
+	usuarios, err := h.queries.ListarUsuariosPorCliente(ctx, pedido.ClienteID)
+	if err != nil || len(usuarios) == 0 {
+		log.Printf("Email: cliente %d sin usuarios registrados (err=%v)", pedido.ClienteID.Int32, err)
+		return
+	}
+
+	subtotal, _ := utils.NumericToFloat64(bo.Subtotal)
+	iva, _ := utils.NumericToFloat64(bo.Iva)
+	total, _ := utils.NumericToFloat64(bo.TotalOrden)
+
+	var orderItems []email.OrderItemData
+	for _, d := range detalles {
+		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
+		importe := precio * float64(d.Cantidad)
+		orderItems = append(orderItems, email.OrderItemData{
+			SKU:         d.VarianteSku.String,
+			Descripcion: d.PadreDescripcion.String,
+			Cantidad:    d.Cantidad,
+			Precio:      formatPrice(precio),
+			Importe:     formatPrice(importe),
+		})
+	}
+
+	backorderData := email.BackorderData{
+		Folio:       bo.Folio,
+		Fecha:       bo.CreatedAt.Time.Format("02/01/2006 15:04"),
+		MetodoPago:  bo.MetodoPago,
+		Subtotal:    formatPrice(subtotal),
+		Iva:         formatPrice(iva),
+		Total:       formatPrice(total),
+		ClienteName: cliente.NombreComercial,
+		ClienteID:   pedido.ClienteID.Int32,
+		Items:       orderItems,
+	}
+
+	h.emailCfg.SendBackorderNotification(backorderData, usuarios[0].Email)
+}
+
+func (h *PedidosHandler) ListarModificaciones(c *gin.Context) {
+	fechaInicio, fechaFin := parseDateRange(c)
+	modificaciones, err := h.queries.ListarModificaciones(c.Request.Context(), fechaInicio, fechaFin)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al listar modificaciones: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, modificaciones)
 }
 
 func parseDateRange(c *gin.Context) (pgtype.Timestamp, pgtype.Timestamp) {

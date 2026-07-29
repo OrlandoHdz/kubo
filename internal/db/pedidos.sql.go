@@ -14,6 +14,7 @@ import (
 const actualizarEnvioPedidoDetalle = `-- name: ActualizarEnvioPedidoDetalle :one
 UPDATE pedido_detalles
 SET
+    cantidad = $2,
     shipped_quantity = $2,
     backorder_quantity = $3,
     updated_at = CURRENT_TIMESTAMP,
@@ -164,6 +165,59 @@ func (q *Queries) ActualizarHasBackorderPedido(ctx context.Context, arg Actualiz
 	return i, err
 }
 
+const actualizarTotalesPedido = `-- name: ActualizarTotalesPedido :one
+UPDATE pedidos
+SET
+    subtotal = $2,
+    iva = $3,
+    total_orden = $4,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $5
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+`
+
+type ActualizarTotalesPedidoParams struct {
+	ID         int32          `json:"id"`
+	Subtotal   pgtype.Numeric `json:"subtotal"`
+	Iva        pgtype.Numeric `json:"iva"`
+	TotalOrden pgtype.Numeric `json:"total_orden"`
+	UpdatedBy  pgtype.Int4    `json:"updated_by"`
+}
+
+func (q *Queries) ActualizarTotalesPedido(ctx context.Context, arg ActualizarTotalesPedidoParams) (Pedido, error) {
+	row := q.db.QueryRow(ctx, actualizarTotalesPedido,
+		arg.ID,
+		arg.Subtotal,
+		arg.Iva,
+		arg.TotalOrden,
+		arg.UpdatedBy,
+	)
+	var i Pedido
+	err := row.Scan(
+		&i.ID,
+		&i.Folio,
+		&i.ClienteID,
+		&i.UsuarioID,
+		&i.Estado,
+		&i.MetodoPago,
+		&i.Subtotal,
+		&i.Iva,
+		&i.TotalOrden,
+		&i.Guia,
+		&i.NotasAdmin,
+		&i.HasBackorder,
+		&i.FechaPedido,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const cancelarDetallePedido = `-- name: CancelarDetallePedido :exec
 UPDATE pedido_detalles
 SET deleted_at = CURRENT_TIMESTAMP,
@@ -189,10 +243,11 @@ INSERT INTO order_modifications (
     original_quantity,
     shipped_quantity,
     backorder_quantity,
-    notes
+    notes,
+    backorder_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, order_id, user_id, item_id, original_quantity, shipped_quantity, backorder_quantity, notes, created_at
+    $1, $2, $3, $4, $5, $6, $7, $8
+) RETURNING id, order_id, user_id, item_id, original_quantity, shipped_quantity, backorder_quantity, notes, created_at, backorder_id
 `
 
 type CrearModificacionPedidoParams struct {
@@ -203,6 +258,7 @@ type CrearModificacionPedidoParams struct {
 	ShippedQuantity   int32       `json:"shipped_quantity"`
 	BackorderQuantity int32       `json:"backorder_quantity"`
 	Notes             pgtype.Text `json:"notes"`
+	BackorderID       pgtype.Int4 `json:"backorder_id"`
 }
 
 func (q *Queries) CrearModificacionPedido(ctx context.Context, arg CrearModificacionPedidoParams) (OrderModification, error) {
@@ -214,6 +270,7 @@ func (q *Queries) CrearModificacionPedido(ctx context.Context, arg CrearModifica
 		arg.ShippedQuantity,
 		arg.BackorderQuantity,
 		arg.Notes,
+		arg.BackorderID,
 	)
 	var i OrderModification
 	err := row.Scan(
@@ -226,6 +283,7 @@ func (q *Queries) CrearModificacionPedido(ctx context.Context, arg CrearModifica
 		&i.BackorderQuantity,
 		&i.Notes,
 		&i.CreatedAt,
+		&i.BackorderID,
 	)
 	return i, err
 }
@@ -448,6 +506,93 @@ func (q *Queries) ListarModificacionesPorPedido(ctx context.Context, orderID pgt
 			&i.BackorderQuantity,
 			&i.Notes,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarModificaciones = `-- name: ListarModificaciones :many
+SELECT
+    om.id,
+    om.order_id,
+    om.user_id,
+    om.item_id,
+    om.original_quantity,
+    om.shipped_quantity,
+    om.backorder_quantity,
+    om.notes,
+    om.created_at,
+    om.backorder_id,
+    COALESCE(p.folio, '') AS pedido_folio,
+    COALESCE(u.email, '') AS usuario_email,
+    COALESCE(pv.sku, '') AS variante_sku,
+    COALESCE(pp.descripcion, '') AS producto_descripcion,
+    COALESCE(b.folio, '') AS backorder_folio,
+    COALESCE(b.total_orden, 0) AS backorder_total
+FROM order_modifications om
+LEFT JOIN pedidos p ON om.order_id = p.id
+LEFT JOIN usuarios u ON om.user_id = u.id
+LEFT JOIN pedido_detalles pd ON om.item_id = pd.id
+LEFT JOIN productos_variantes pv ON pd.variante_id = pv.id
+LEFT JOIN productos_padre pp ON pv.padre_id = pp.id
+LEFT JOIN backorders b ON om.backorder_id = b.id
+WHERE om.backorder_quantity > 0
+  AND ($1::timestamp IS NULL OR om.created_at >= $1)
+  AND ($2::timestamp IS NULL OR om.created_at <= $2)
+ORDER BY om.created_at DESC
+`
+
+type ListarModificacionesRow struct {
+	ID                  int32            `json:"id"`
+	OrderID             pgtype.Int4      `json:"order_id"`
+	UserID              pgtype.Int4      `json:"user_id"`
+	ItemID              pgtype.Int4      `json:"item_id"`
+	OriginalQuantity    int32            `json:"original_quantity"`
+	ShippedQuantity     int32            `json:"shipped_quantity"`
+	BackorderQuantity   int32            `json:"backorder_quantity"`
+	Notes               pgtype.Text      `json:"notes"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	BackorderID         pgtype.Int4      `json:"backorder_id"`
+	PedidoFolio         string           `json:"pedido_folio"`
+	UsuarioEmail        string           `json:"usuario_email"`
+	VarianteSku         string           `json:"variante_sku"`
+	ProductoDescripcion string           `json:"producto_descripcion"`
+	BackorderFolio      string           `json:"backorder_folio"`
+	BackorderTotal      pgtype.Numeric   `json:"backorder_total"`
+}
+
+func (q *Queries) ListarModificaciones(ctx context.Context, fechaInicio, fechaFin pgtype.Timestamp) ([]ListarModificacionesRow, error) {
+	rows, err := q.db.Query(ctx, listarModificaciones, fechaInicio, fechaFin)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListarModificacionesRow
+	for rows.Next() {
+		var i ListarModificacionesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.UserID,
+			&i.ItemID,
+			&i.OriginalQuantity,
+			&i.ShippedQuantity,
+			&i.BackorderQuantity,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.BackorderID,
+			&i.PedidoFolio,
+			&i.UsuarioEmail,
+			&i.VarianteSku,
+			&i.ProductoDescripcion,
+			&i.BackorderFolio,
+			&i.BackorderTotal,
 		); err != nil {
 			return nil, err
 		}

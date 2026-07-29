@@ -99,6 +99,7 @@ WHERE pd.variante_id = $1
 -- name: ActualizarEnvioPedidoDetalle :one
 UPDATE pedido_detalles
 SET
+    cantidad = $2,
     shipped_quantity = $2,
     backorder_quantity = $3,
     updated_at = CURRENT_TIMESTAMP,
@@ -114,9 +115,10 @@ INSERT INTO order_modifications (
     original_quantity,
     shipped_quantity,
     backorder_quantity,
-    notes
+    notes,
+    backorder_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
 -- name: ActualizarHasBackorderPedido :one
@@ -131,7 +133,48 @@ SET
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
+-- name: ActualizarTotalesPedido :one
+UPDATE pedidos
+SET
+    subtotal = $2,
+    iva = $3,
+    total_orden = $4,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = $5
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;
+
 -- name: ListarModificacionesPorPedido :many
 SELECT * FROM order_modifications
 WHERE order_id = $1
 ORDER BY created_at DESC;
+
+-- name: ListarModificaciones :many
+SELECT
+    om.id,
+    om.order_id,
+    om.user_id,
+    om.item_id,
+    om.original_quantity,
+    om.shipped_quantity,
+    om.backorder_quantity,
+    om.notes,
+    om.created_at,
+    om.backorder_id,
+    p.folio AS pedido_folio,
+    u.email AS usuario_email,
+    pv.sku AS variante_sku,
+    pp.descripcion AS producto_descripcion,
+    COALESCE(b.folio, '') AS backorder_folio,
+    COALESCE(b.total_orden, 0) AS backorder_total
+FROM order_modifications om
+LEFT JOIN pedidos p ON om.order_id = p.id
+LEFT JOIN usuarios u ON om.user_id = u.id
+LEFT JOIN pedido_detalles pd ON om.item_id = pd.id
+LEFT JOIN productos_variantes pv ON pd.variante_id = pv.id
+LEFT JOIN productos_padre pp ON pv.padre_id = pp.id
+LEFT JOIN backorders b ON om.backorder_id = b.id
+WHERE om.backorder_quantity > 0
+  AND ($1::timestamp IS NULL OR om.created_at >= $1)
+  AND ($2::timestamp IS NULL OR om.created_at <= $2)
+ORDER BY om.created_at DESC;
