@@ -11,9 +11,10 @@ INSERT INTO clientes (
     dias_credito, 
     permitir_pago_credito, 
     metodo_pago_preferente,
+    tiene_precio_distribuidor,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 ) RETURNING *;
 
 -- name: ActualizarCliente :one

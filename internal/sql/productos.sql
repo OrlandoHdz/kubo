@@ -4,6 +4,12 @@
 -- CRUD PRODUCTOS PADRE (Contenedores)
 -- ==========================================
 
+-- name: ExisteProductoPadreEliminadoPorCve :one
+SELECT EXISTS(
+    SELECT 1 FROM productos_padre
+    WHERE cve_prod_integracion = $1 AND deleted_at IS NOT NULL
+) AS existe;
+
 -- name: CrearProductoPadre :one
 INSERT INTO productos_padre (
     cve_prod_integracion, 

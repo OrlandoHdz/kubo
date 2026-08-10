@@ -15,9 +15,11 @@ INSERT INTO solicitud_registro_nuevo_cliente (
     correo_contacto,
     telefono_contacto,
     comentarios,
-    constancia_sat_url
+    constancia_sat_url,
+    consumo_o_distribuidor,
+    foto_negocio_url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
 ) RETURNING id;
 
 -- name: ListarSolicitudesPendientes :many

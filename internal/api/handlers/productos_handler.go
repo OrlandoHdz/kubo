@@ -169,6 +169,18 @@ func (h *ProductosHandler) CrearPadre(c *gin.Context) {
 
 	titulo := c.PostForm("titulo")
 
+	if cveProdIntegracion != "" {
+		existeEliminado, err := h.queries.ExisteProductoPadreEliminadoPorCve(c.Request.Context(), pgtype.Text{String: cveProdIntegracion, Valid: true})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al validar producto: " + err.Error()})
+			return
+		}
+		if existeEliminado {
+			c.JSON(http.StatusConflict, gin.H{"error": "Ya existe un producto eliminado con ese cve_prod_integracion"})
+			return
+		}
+	}
+
 	producto, err := h.queries.CrearProductoPadre(c.Request.Context(), db.CrearProductoPadreParams{
 		CveProdIntegracion:   pgtype.Text{String: cveProdIntegracion, Valid: cveProdIntegracion != ""},
 		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},

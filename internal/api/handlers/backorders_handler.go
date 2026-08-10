@@ -429,7 +429,7 @@ func (h *BackordersHandler) notificarDisponibilidad(ctx context.Context, backord
                   <td style="padding: 12px; color: #333; border-bottom: 1px solid #f5e0d0;">%s</td>
                 </tr>
                 <tr>
-                  <td style="padding: 12px; width: 40%%; font-weight: bold; color: #333; border-bottom: 1px solid #f5e0d0;">SKU</td>
+                  <td style="padding: 12px; width: 40%%; font-weight: bold; color: #333; border-bottom: 1px solid #f5e0d0;">CÓDIGO</td>
                   <td style="padding: 12px; color: #c9540e; font-weight: bold; border-bottom: 1px solid #f5e0d0;">%s</td>
                 </tr>
                 <tr>

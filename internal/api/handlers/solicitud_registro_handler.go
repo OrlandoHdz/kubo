@@ -43,10 +43,16 @@ func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
 	correoContacto := c.PostForm("email")
 	telefonoContacto := c.PostForm("phone")
 	comentarios := c.PostForm("comentarios")
+	consumoODistribuidor := c.PostForm("consumoODistribuidor")
 
 	// Validaciones básicas requeridas
 	if nombreComercial == "" || razonSocial == "" || rfc == "" || tipoContribuyente == "" {
 		c.JSON(http.StatusBadRequest, map[string]string{"error": "Faltan campos obligatorios (nombre_comercial, razon_social, rfc, tipo_contribuyente)"})
+		return
+	}
+
+	if consumoODistribuidor != "Consumo propio" && consumoODistribuidor != "Distribuidor" && consumoODistribuidor != "Ambos" {
+		c.JSON(http.StatusBadRequest, map[string]string{"error": "consumo_o_distribuidor inválido. Debe ser 'Consumo propio', 'Distribuidor' o 'Ambos'"})
 		return
 	}
 
@@ -94,24 +100,55 @@ func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
 		pgConstancia = pgtype.Text{String: constanciaSatUrl, Valid: true}
 	}
 
+	// 2b. Manejar la subida de la foto del negocio (opcional)
+	var fotoNegocioUrl string
+	fotoNegocio, errFoto := c.FormFile("foto_negocio")
+	if errFoto == nil {
+		uploadDirFoto := "uploads/fotos_negocio"
+		if err := os.MkdirAll(uploadDirFoto, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error al crear directorio de subidas"})
+			return
+		}
+
+		fotoFilename := fmt.Sprintf("%s_%d%s", rfc, time.Now().Unix(), filepath.Ext(fotoNegocio.Filename))
+		fotoFilePath := filepath.Join(uploadDirFoto, fotoFilename)
+
+		if err := c.SaveUploadedFile(fotoNegocio, fotoFilePath); err != nil {
+			c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error al guardar la foto del negocio"})
+			return
+		}
+
+		fotoNegocioUrl = "/" + fotoFilePath
+	} else if errFoto != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, map[string]string{"error": "Error al procesar la foto del negocio"})
+		return
+	}
+
+	pgFotoNegocio := pgtype.Text{Valid: false}
+	if fotoNegocioUrl != "" {
+		pgFotoNegocio = pgtype.Text{String: fotoNegocioUrl, Valid: true}
+	}
+
 	// 3. Guardar en la Base de Datos
 	id, err := h.queries.CrearSolicitudRegistroNuevoCliente(c.Request.Context(), db.CrearSolicitudRegistroNuevoClienteParams{
-		NombreComercial:   nombreComercial,
-		RazonSocial:       razonSocial,
-		Rfc:               rfc,
-		TipoContribuyente: tipoContribuyente,
-		Calle:             calle,
-		Numero:            numero,
-		Colonia:           colonia,
-		Ciudad:            ciudad,
-		Estado:            estado,
-		Cp:                cp,
-		NombreContacto:    nombreContacto,
-		PuestoContacto:    puestoContacto,
-		CorreoContacto:    correoContacto,
-		TelefonoContacto:  telefonoContacto,
-		Comentarios:       pgComentarios,
-		ConstanciaSatUrl:  pgConstancia,
+		NombreComercial:      nombreComercial,
+		RazonSocial:          razonSocial,
+		Rfc:                  rfc,
+		TipoContribuyente:    tipoContribuyente,
+		Calle:                calle,
+		Numero:               numero,
+		Colonia:              colonia,
+		Ciudad:               ciudad,
+		Estado:               estado,
+		Cp:                   cp,
+		NombreContacto:       nombreContacto,
+		PuestoContacto:       puestoContacto,
+		CorreoContacto:       correoContacto,
+		TelefonoContacto:     telefonoContacto,
+		Comentarios:          pgComentarios,
+		ConstanciaSatUrl:     pgConstancia,
+		ConsumoODistribuidor: consumoODistribuidor,
+		FotoNegocioUrl:       pgFotoNegocio,
 	})
 
 	if err != nil {

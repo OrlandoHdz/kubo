@@ -63,12 +63,36 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"user":  userMap,
 	}
 
+	// Permisos del menú del Panel de Control (solo aplican a usuarios Admin/Staff)
+	// - Si el usuario NO tiene permisos configurados aún: acceso total (permisos = nil)
+	// - Si ya se configuraron: solo las claves activas
+	if user.Rol != "cliente" {
+		configurados, errCount := h.queries.ContarPermisosConfiguradosDeUsuario(c.Request.Context(), user.ID)
+		if errCount != nil {
+			log.Printf("Error al contar permisos para usuario ID %d: %v", user.ID, errCount)
+			response["permisos"] = nil
+		} else if configurados == 0 {
+			response["permisos"] = nil
+		} else {
+			permisos, errPermisos := h.queries.ListarPermisosActivosDeUsuario(c.Request.Context(), user.ID)
+			if errPermisos != nil {
+				log.Printf("Error al obtener permisos para usuario ID %d: %v", user.ID, errPermisos)
+				response["permisos"] = []string{}
+			} else {
+				response["permisos"] = permisos
+			}
+		}
+	} else {
+		response["permisos"] = []string{}
+	}
+
 	if user.Rol == "cliente" && user.ClienteID.Valid {
 		cliente, err := h.queries.GetCliente(c.Request.Context(), user.ClienteID.Int32)
 		if err != nil {
 			log.Printf("Error al obtener cliente para usuario ID %d: %v", user.ID, err)
 			response["credito_disponible"] = 0.0
 		} else {
+			userMap["tiene_precio_distribuidor"] = cliente.TienePrecioDistribuidor
 			total, err1 := utils.NumericToFloat64(cliente.LineaCreditoTotal)
 			utilizada, err2 := utils.NumericToFloat64(cliente.LineaCreditoUtilizada)
 			if err1 != nil || err2 != nil {
@@ -77,6 +101,66 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			} else {
 				response["credito_disponible"] = total - utilizada
 			}
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// Perfil devuelve los datos del usuario autenticado junto con sus permisos del menú.
+// GET /api/v1/perfil
+func (h *AuthHandler) Perfil(c *gin.Context) {
+	userID, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, map[string]any{"error": "No autenticado"})
+		return
+	}
+
+	user, err := h.queries.GetUsuarioByID(c.Request.Context(), userID.(int32))
+	if err != nil {
+		c.JSON(http.StatusNotFound, map[string]any{"error": "Usuario no encontrado"})
+		return
+	}
+
+	userMap := map[string]any{
+		"id":    user.ID,
+		"email": user.Email,
+		"rol":   user.Rol,
+	}
+	if user.ClienteID.Valid {
+		userMap["cliente_id"] = user.ClienteID.Int32
+	}
+
+	response := map[string]any{
+		"user": userMap,
+	}
+
+	if user.Rol != "cliente" {
+		configurados, errCount := h.queries.ContarPermisosConfiguradosDeUsuario(c.Request.Context(), user.ID)
+		if errCount != nil {
+			log.Printf("Error al contar permisos para usuario ID %d: %v", user.ID, errCount)
+			response["permisos"] = nil
+		} else if configurados == 0 {
+			response["permisos"] = nil
+		} else {
+			permisos, errPermisos := h.queries.ListarPermisosActivosDeUsuario(c.Request.Context(), user.ID)
+			if errPermisos != nil {
+				log.Printf("Error al obtener permisos para usuario ID %d: %v", user.ID, errPermisos)
+				response["permisos"] = []string{}
+			} else {
+				response["permisos"] = permisos
+			}
+		}
+	} else {
+		response["permisos"] = []string{}
+	}
+
+	if user.Rol == "cliente" && user.ClienteID.Valid {
+		cliente, err := h.queries.GetCliente(c.Request.Context(), user.ClienteID.Int32)
+		if err != nil {
+			log.Printf("Error al obtener cliente para usuario ID %d: %v", user.ID, err)
+		} else {
+			userMap["tiene_precio_distribuidor"] = cliente.TienePrecioDistribuidor
 		}
 	}
 

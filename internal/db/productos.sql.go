@@ -217,8 +217,6 @@ func (q *Queries) ActualizarVariante(ctx context.Context, arg ActualizarVariante
 }
 
 const crearProductoPadre = `-- name: CrearProductoPadre :one
-
-
 INSERT INTO productos_padre (
     cve_prod_integracion, 
     descripcion,
@@ -269,10 +267,6 @@ type CrearProductoPadreParams struct {
 	CreatedBy            pgtype.Int4 `json:"created_by"`
 }
 
-// internal/sql/productos.sql
-// ==========================================
-// CRUD PRODUCTOS PADRE (Contenedores)
-// ==========================================
 func (q *Queries) CrearProductoPadre(ctx context.Context, arg CrearProductoPadreParams) (ProductosPadre, error) {
 	row := q.db.QueryRow(ctx, crearProductoPadre,
 		arg.CveProdIntegracion,
@@ -401,6 +395,26 @@ func (q *Queries) CrearVariante(ctx context.Context, arg CrearVarianteParams) (P
 		&i.DeletedBy,
 	)
 	return i, err
+}
+
+const existeProductoPadreEliminadoPorCve = `-- name: ExisteProductoPadreEliminadoPorCve :one
+
+
+SELECT EXISTS(
+    SELECT 1 FROM productos_padre
+    WHERE cve_prod_integracion = $1 AND deleted_at IS NOT NULL
+) AS existe
+`
+
+// internal/sql/productos.sql
+// ==========================================
+// CRUD PRODUCTOS PADRE (Contenedores)
+// ==========================================
+func (q *Queries) ExisteProductoPadreEliminadoPorCve(ctx context.Context, cveProdIntegracion pgtype.Text) (bool, error) {
+	row := q.db.QueryRow(ctx, existeProductoPadreEliminadoPorCve, cveProdIntegracion)
+	var existe bool
+	err := row.Scan(&existe)
+	return existe, err
 }
 
 const getProductoPadre = `-- name: GetProductoPadre :one

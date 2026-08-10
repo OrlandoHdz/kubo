@@ -39,7 +39,7 @@ func (q *Queries) ActualizarSolicitudEstado(ctx context.Context, arg ActualizarS
 }
 
 const buscarSolicitudByCP = `-- name: BuscarSolicitudByCP :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE cp = $1 AND deleted_at IS NULL
 `
 
@@ -72,12 +72,14 @@ func (q *Queries) BuscarSolicitudByCP(ctx context.Context, cp string) (Solicitud
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByCalle = `-- name: BuscarSolicitudByCalle :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE calle = $1 AND deleted_at IS NULL
 `
 
@@ -110,12 +112,14 @@ func (q *Queries) BuscarSolicitudByCalle(ctx context.Context, calle string) (Sol
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByCiudad = `-- name: BuscarSolicitudByCiudad :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE ciudad = $1 AND deleted_at IS NULL
 `
 
@@ -148,12 +152,14 @@ func (q *Queries) BuscarSolicitudByCiudad(ctx context.Context, ciudad string) (S
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByColonia = `-- name: BuscarSolicitudByColonia :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE colonia = $1 AND deleted_at IS NULL
 `
 
@@ -186,12 +192,14 @@ func (q *Queries) BuscarSolicitudByColonia(ctx context.Context, colonia string) 
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByCorreoContacto = `-- name: BuscarSolicitudByCorreoContacto :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE correo_contacto = $1 AND deleted_at IS NULL
 `
 
@@ -224,12 +232,14 @@ func (q *Queries) BuscarSolicitudByCorreoContacto(ctx context.Context, correoCon
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByEstado = `-- name: BuscarSolicitudByEstado :many
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE solicitud_estado = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -269,6 +279,8 @@ func (q *Queries) BuscarSolicitudByEstado(ctx context.Context, solicitudEstado s
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.ConsumoODistribuidor,
+			&i.FotoNegocioUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -281,7 +293,7 @@ func (q *Queries) BuscarSolicitudByEstado(ctx context.Context, solicitudEstado s
 }
 
 const buscarSolicitudByNombreComercial = `-- name: BuscarSolicitudByNombreComercial :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE nombre_comercial = $1 AND deleted_at IS NULL
 `
 
@@ -314,12 +326,14 @@ func (q *Queries) BuscarSolicitudByNombreComercial(ctx context.Context, nombreCo
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByNombreContacto = `-- name: BuscarSolicitudByNombreContacto :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE nombre_contacto = $1 AND deleted_at IS NULL
 `
 
@@ -352,12 +366,14 @@ func (q *Queries) BuscarSolicitudByNombreContacto(ctx context.Context, nombreCon
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByNumero = `-- name: BuscarSolicitudByNumero :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE numero = $1 AND deleted_at IS NULL
 `
 
@@ -390,12 +406,14 @@ func (q *Queries) BuscarSolicitudByNumero(ctx context.Context, numero string) (S
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByPuestoContacto = `-- name: BuscarSolicitudByPuestoContacto :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE puesto_contacto = $1 AND deleted_at IS NULL
 `
 
@@ -428,12 +446,14 @@ func (q *Queries) BuscarSolicitudByPuestoContacto(ctx context.Context, puestoCon
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByRFC = `-- name: BuscarSolicitudByRFC :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE rfc = $1 AND deleted_at IS NULL
 `
 
@@ -466,12 +486,14 @@ func (q *Queries) BuscarSolicitudByRFC(ctx context.Context, rfc string) (Solicit
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByRazonSocial = `-- name: BuscarSolicitudByRazonSocial :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE razon_social = $1 AND deleted_at IS NULL
 `
 
@@ -504,12 +526,14 @@ func (q *Queries) BuscarSolicitudByRazonSocial(ctx context.Context, razonSocial 
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
 
 const buscarSolicitudByTelefonoContacto = `-- name: BuscarSolicitudByTelefonoContacto :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE telefono_contacto = $1 AND deleted_at IS NULL
 `
 
@@ -542,6 +566,8 @@ func (q *Queries) BuscarSolicitudByTelefonoContacto(ctx context.Context, telefon
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }
@@ -563,29 +589,33 @@ INSERT INTO solicitud_registro_nuevo_cliente (
     correo_contacto,
     telefono_contacto,
     comentarios,
-    constancia_sat_url
+    constancia_sat_url,
+    consumo_o_distribuidor,
+    foto_negocio_url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
 ) RETURNING id
 `
 
 type CrearSolicitudRegistroNuevoClienteParams struct {
-	NombreComercial   string      `json:"nombre_comercial"`
-	RazonSocial       string      `json:"razon_social"`
-	Rfc               string      `json:"rfc"`
-	TipoContribuyente string      `json:"tipo_contribuyente"`
-	Calle             string      `json:"calle"`
-	Numero            string      `json:"numero"`
-	Colonia           string      `json:"colonia"`
-	Ciudad            string      `json:"ciudad"`
-	Estado            string      `json:"estado"`
-	Cp                string      `json:"cp"`
-	NombreContacto    string      `json:"nombre_contacto"`
-	PuestoContacto    string      `json:"puesto_contacto"`
-	CorreoContacto    string      `json:"correo_contacto"`
-	TelefonoContacto  string      `json:"telefono_contacto"`
-	Comentarios       pgtype.Text `json:"comentarios"`
-	ConstanciaSatUrl  pgtype.Text `json:"constancia_sat_url"`
+	NombreComercial      string      `json:"nombre_comercial"`
+	RazonSocial          string      `json:"razon_social"`
+	Rfc                  string      `json:"rfc"`
+	TipoContribuyente    string      `json:"tipo_contribuyente"`
+	Calle                string      `json:"calle"`
+	Numero               string      `json:"numero"`
+	Colonia              string      `json:"colonia"`
+	Ciudad               string      `json:"ciudad"`
+	Estado               string      `json:"estado"`
+	Cp                   string      `json:"cp"`
+	NombreContacto       string      `json:"nombre_contacto"`
+	PuestoContacto       string      `json:"puesto_contacto"`
+	CorreoContacto       string      `json:"correo_contacto"`
+	TelefonoContacto     string      `json:"telefono_contacto"`
+	Comentarios          pgtype.Text `json:"comentarios"`
+	ConstanciaSatUrl     pgtype.Text `json:"constancia_sat_url"`
+	ConsumoODistribuidor string      `json:"consumo_o_distribuidor"`
+	FotoNegocioUrl       pgtype.Text `json:"foto_negocio_url"`
 }
 
 func (q *Queries) CrearSolicitudRegistroNuevoCliente(ctx context.Context, arg CrearSolicitudRegistroNuevoClienteParams) (int32, error) {
@@ -606,6 +636,8 @@ func (q *Queries) CrearSolicitudRegistroNuevoCliente(ctx context.Context, arg Cr
 		arg.TelefonoContacto,
 		arg.Comentarios,
 		arg.ConstanciaSatUrl,
+		arg.ConsumoODistribuidor,
+		arg.FotoNegocioUrl,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -613,7 +645,7 @@ func (q *Queries) CrearSolicitudRegistroNuevoCliente(ctx context.Context, arg Cr
 }
 
 const listarSolicitudesPendientes = `-- name: ListarSolicitudesPendientes :many
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE solicitud_estado = 'Pendiente' AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -653,6 +685,8 @@ func (q *Queries) ListarSolicitudesPendientes(ctx context.Context) ([]SolicitudR
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.ConsumoODistribuidor,
+			&i.FotoNegocioUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -665,7 +699,7 @@ func (q *Queries) ListarSolicitudesPendientes(ctx context.Context) ([]SolicitudR
 }
 
 const listarTodasLasSolicitudes = `-- name: ListarTodasLasSolicitudes :many
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -705,6 +739,8 @@ func (q *Queries) ListarTodasLasSolicitudes(ctx context.Context) ([]SolicitudReg
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.ConsumoODistribuidor,
+			&i.FotoNegocioUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -717,7 +753,7 @@ func (q *Queries) ListarTodasLasSolicitudes(ctx context.Context) ([]SolicitudReg
 }
 
 const obtenerSolicitudByID = `-- name: ObtenerSolicitudByID :one
-SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM solicitud_registro_nuevo_cliente
+SELECT id, nombre_comercial, razon_social, rfc, tipo_contribuyente, solicitud_estado, observacion, comentarios, constancia_sat_url, calle, numero, colonia, ciudad, estado, cp, nombre_contacto, puesto_contacto, correo_contacto, telefono_contacto, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, consumo_o_distribuidor, foto_negocio_url FROM solicitud_registro_nuevo_cliente
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -750,6 +786,8 @@ func (q *Queries) ObtenerSolicitudByID(ctx context.Context, id int32) (Solicitud
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.ConsumoODistribuidor,
+		&i.FotoNegocioUrl,
 	)
 	return i, err
 }

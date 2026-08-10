@@ -46,23 +46,24 @@ type BackorderDetalle struct {
 }
 
 type Cliente struct {
-	ID                    int32            `json:"id"`
-	NombreComercial       string           `json:"nombre_comercial"`
-	RazonSocial           string           `json:"razon_social"`
-	Rfc                   string           `json:"rfc"`
-	Estado                string           `json:"estado"`
-	MontoMinimoCompra     pgtype.Numeric   `json:"monto_minimo_compra"`
-	LineaCreditoTotal     pgtype.Numeric   `json:"linea_credito_total"`
-	LineaCreditoUtilizada pgtype.Numeric   `json:"linea_credito_utilizada"`
-	DiasCredito           int32            `json:"dias_credito"`
-	PermitirPagoCredito   bool             `json:"permitir_pago_credito"`
-	MetodoPagoPreferente  string           `json:"metodo_pago_preferente"`
-	CreatedAt             pgtype.Timestamp `json:"created_at"`
-	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
-	DeletedAt             pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy             pgtype.Int4      `json:"created_by"`
-	UpdatedBy             pgtype.Int4      `json:"updated_by"`
-	DeletedBy             pgtype.Int4      `json:"deleted_by"`
+	ID                      int32            `json:"id"`
+	NombreComercial         string           `json:"nombre_comercial"`
+	RazonSocial             string           `json:"razon_social"`
+	Rfc                     string           `json:"rfc"`
+	Estado                  string           `json:"estado"`
+	MontoMinimoCompra       pgtype.Numeric   `json:"monto_minimo_compra"`
+	LineaCreditoTotal       pgtype.Numeric   `json:"linea_credito_total"`
+	LineaCreditoUtilizada   pgtype.Numeric   `json:"linea_credito_utilizada"`
+	DiasCredito             int32            `json:"dias_credito"`
+	PermitirPagoCredito     bool             `json:"permitir_pago_credito"`
+	MetodoPagoPreferente    string           `json:"metodo_pago_preferente"`
+	CreatedAt               pgtype.Timestamp `json:"created_at"`
+	UpdatedAt               pgtype.Timestamp `json:"updated_at"`
+	DeletedAt               pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy               pgtype.Int4      `json:"created_by"`
+	UpdatedBy               pgtype.Int4      `json:"updated_by"`
+	DeletedBy               pgtype.Int4      `json:"deleted_by"`
+	TienePrecioDistribuidor bool             `json:"tiene_precio_distribuidor"`
 }
 
 type ClientesIntegracion struct {
@@ -302,6 +303,15 @@ type PedidoDetalle struct {
 	DeletedBy              pgtype.Int4      `json:"deleted_by"`
 }
 
+type Permiso struct {
+	ID        int32            `json:"id"`
+	Clave     string           `json:"clave"`
+	Nombre    string           `json:"nombre"`
+	Grupo     string           `json:"grupo"`
+	Orden     int32            `json:"orden"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
 type ProductosIntegracion struct {
 	ID        int32            `json:"id"`
 	CseProd   pgtype.Text      `json:"cse_prod"`
@@ -369,31 +379,33 @@ type ProductosVariante struct {
 }
 
 type SolicitudRegistroNuevoCliente struct {
-	ID                int32            `json:"id"`
-	NombreComercial   string           `json:"nombre_comercial"`
-	RazonSocial       string           `json:"razon_social"`
-	Rfc               string           `json:"rfc"`
-	TipoContribuyente string           `json:"tipo_contribuyente"`
-	SolicitudEstado   string           `json:"solicitud_estado"`
-	Observacion       pgtype.Text      `json:"observacion"`
-	Comentarios       pgtype.Text      `json:"comentarios"`
-	ConstanciaSatUrl  pgtype.Text      `json:"constancia_sat_url"`
-	Calle             string           `json:"calle"`
-	Numero            string           `json:"numero"`
-	Colonia           string           `json:"colonia"`
-	Ciudad            string           `json:"ciudad"`
-	Estado            string           `json:"estado"`
-	Cp                string           `json:"cp"`
-	NombreContacto    string           `json:"nombre_contacto"`
-	PuestoContacto    string           `json:"puesto_contacto"`
-	CorreoContacto    string           `json:"correo_contacto"`
-	TelefonoContacto  string           `json:"telefono_contacto"`
-	CreatedAt         pgtype.Timestamp `json:"created_at"`
-	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
-	DeletedAt         pgtype.Timestamp `json:"deleted_at"`
-	CreatedBy         pgtype.Int4      `json:"created_by"`
-	UpdatedBy         pgtype.Int4      `json:"updated_by"`
-	DeletedBy         pgtype.Int4      `json:"deleted_by"`
+	ID                   int32            `json:"id"`
+	NombreComercial      string           `json:"nombre_comercial"`
+	RazonSocial          string           `json:"razon_social"`
+	Rfc                  string           `json:"rfc"`
+	TipoContribuyente    string           `json:"tipo_contribuyente"`
+	SolicitudEstado      string           `json:"solicitud_estado"`
+	Observacion          pgtype.Text      `json:"observacion"`
+	Comentarios          pgtype.Text      `json:"comentarios"`
+	ConstanciaSatUrl     pgtype.Text      `json:"constancia_sat_url"`
+	Calle                string           `json:"calle"`
+	Numero               string           `json:"numero"`
+	Colonia              string           `json:"colonia"`
+	Ciudad               string           `json:"ciudad"`
+	Estado               string           `json:"estado"`
+	Cp                   string           `json:"cp"`
+	NombreContacto       string           `json:"nombre_contacto"`
+	PuestoContacto       string           `json:"puesto_contacto"`
+	CorreoContacto       string           `json:"correo_contacto"`
+	TelefonoContacto     string           `json:"telefono_contacto"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
+	DeletedAt            pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy            pgtype.Int4      `json:"created_by"`
+	UpdatedBy            pgtype.Int4      `json:"updated_by"`
+	DeletedBy            pgtype.Int4      `json:"deleted_by"`
+	ConsumoODistribuidor string           `json:"consumo_o_distribuidor"`
+	FotoNegocioUrl       pgtype.Text      `json:"foto_negocio_url"`
 }
 
 type TransaccionesBanregio struct {
@@ -431,4 +443,14 @@ type Usuario struct {
 	CreatedBy    pgtype.Int4      `json:"created_by"`
 	UpdatedBy    pgtype.Int4      `json:"updated_by"`
 	DeletedBy    pgtype.Int4      `json:"deleted_by"`
+}
+
+type UsuarioPermiso struct {
+	ID        int32            `json:"id"`
+	UsuarioID int32            `json:"usuario_id"`
+	PermisoID int32            `json:"permiso_id"`
+	Activo    bool             `json:"activo"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	UpdatedBy pgtype.Int4      `json:"updated_by"`
 }

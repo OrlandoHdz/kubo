@@ -25,7 +25,7 @@ RETURNING id, pedido_id, variante_id, cantidad, precio_unitario_aplicado, shippe
 
 type ActualizarEnvioPedidoDetalleParams struct {
 	ID                int32       `json:"id"`
-	ShippedQuantity   int32       `json:"shipped_quantity"`
+	Cantidad          int32       `json:"cantidad"`
 	BackorderQuantity int32       `json:"backorder_quantity"`
 	UpdatedBy         pgtype.Int4 `json:"updated_by"`
 }
@@ -33,7 +33,7 @@ type ActualizarEnvioPedidoDetalleParams struct {
 func (q *Queries) ActualizarEnvioPedidoDetalle(ctx context.Context, arg ActualizarEnvioPedidoDetalleParams) (PedidoDetalle, error) {
 	row := q.db.QueryRow(ctx, actualizarEnvioPedidoDetalle,
 		arg.ID,
-		arg.ShippedQuantity,
+		arg.Cantidad,
 		arg.BackorderQuantity,
 		arg.UpdatedBy,
 	)
@@ -481,42 +481,6 @@ func (q *Queries) GetPedidoByFolio(ctx context.Context, folio string) (Pedido, e
 	return i, err
 }
 
-const listarModificacionesPorPedido = `-- name: ListarModificacionesPorPedido :many
-SELECT id, order_id, user_id, item_id, original_quantity, shipped_quantity, backorder_quantity, notes, created_at FROM order_modifications
-WHERE order_id = $1
-ORDER BY created_at DESC
-`
-
-func (q *Queries) ListarModificacionesPorPedido(ctx context.Context, orderID pgtype.Int4) ([]OrderModification, error) {
-	rows, err := q.db.Query(ctx, listarModificacionesPorPedido, orderID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []OrderModification
-	for rows.Next() {
-		var i OrderModification
-		if err := rows.Scan(
-			&i.ID,
-			&i.OrderID,
-			&i.UserID,
-			&i.ItemID,
-			&i.OriginalQuantity,
-			&i.ShippedQuantity,
-			&i.BackorderQuantity,
-			&i.Notes,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listarModificaciones = `-- name: ListarModificaciones :many
 SELECT
     om.id,
@@ -529,10 +493,10 @@ SELECT
     om.notes,
     om.created_at,
     om.backorder_id,
-    COALESCE(p.folio, '') AS pedido_folio,
-    COALESCE(u.email, '') AS usuario_email,
-    COALESCE(pv.sku, '') AS variante_sku,
-    COALESCE(pp.descripcion, '') AS producto_descripcion,
+    p.folio AS pedido_folio,
+    u.email AS usuario_email,
+    pv.sku AS variante_sku,
+    pp.descripcion AS producto_descripcion,
     COALESCE(b.folio, '') AS backorder_folio,
     COALESCE(b.total_orden, 0) AS backorder_total
 FROM order_modifications om
@@ -548,6 +512,11 @@ WHERE om.backorder_quantity > 0
 ORDER BY om.created_at DESC
 `
 
+type ListarModificacionesParams struct {
+	Column1 pgtype.Timestamp `json:"column_1"`
+	Column2 pgtype.Timestamp `json:"column_2"`
+}
+
 type ListarModificacionesRow struct {
 	ID                  int32            `json:"id"`
 	OrderID             pgtype.Int4      `json:"order_id"`
@@ -559,16 +528,16 @@ type ListarModificacionesRow struct {
 	Notes               pgtype.Text      `json:"notes"`
 	CreatedAt           pgtype.Timestamp `json:"created_at"`
 	BackorderID         pgtype.Int4      `json:"backorder_id"`
-	PedidoFolio         string           `json:"pedido_folio"`
-	UsuarioEmail        string           `json:"usuario_email"`
-	VarianteSku         string           `json:"variante_sku"`
-	ProductoDescripcion string           `json:"producto_descripcion"`
+	PedidoFolio         pgtype.Text      `json:"pedido_folio"`
+	UsuarioEmail        pgtype.Text      `json:"usuario_email"`
+	VarianteSku         pgtype.Text      `json:"variante_sku"`
+	ProductoDescripcion pgtype.Text      `json:"producto_descripcion"`
 	BackorderFolio      string           `json:"backorder_folio"`
 	BackorderTotal      pgtype.Numeric   `json:"backorder_total"`
 }
 
-func (q *Queries) ListarModificaciones(ctx context.Context, fechaInicio, fechaFin pgtype.Timestamp) ([]ListarModificacionesRow, error) {
-	rows, err := q.db.Query(ctx, listarModificaciones, fechaInicio, fechaFin)
+func (q *Queries) ListarModificaciones(ctx context.Context, arg ListarModificacionesParams) ([]ListarModificacionesRow, error) {
+	rows, err := q.db.Query(ctx, listarModificaciones, arg.Column1, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
@@ -593,6 +562,43 @@ func (q *Queries) ListarModificaciones(ctx context.Context, fechaInicio, fechaFi
 			&i.ProductoDescripcion,
 			&i.BackorderFolio,
 			&i.BackorderTotal,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarModificacionesPorPedido = `-- name: ListarModificacionesPorPedido :many
+SELECT id, order_id, user_id, item_id, original_quantity, shipped_quantity, backorder_quantity, notes, created_at, backorder_id FROM order_modifications
+WHERE order_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListarModificacionesPorPedido(ctx context.Context, orderID pgtype.Int4) ([]OrderModification, error) {
+	rows, err := q.db.Query(ctx, listarModificacionesPorPedido, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OrderModification
+	for rows.Next() {
+		var i OrderModification
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.UserID,
+			&i.ItemID,
+			&i.OriginalQuantity,
+			&i.ShippedQuantity,
+			&i.BackorderQuantity,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.BackorderID,
 		); err != nil {
 			return nil, err
 		}

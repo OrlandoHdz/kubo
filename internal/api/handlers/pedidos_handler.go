@@ -586,7 +586,7 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 
 		_, err := qtx.ActualizarEnvioPedidoDetalle(c.Request.Context(), db.ActualizarEnvioPedidoDetalleParams{
 			ID:                item.DetalleID,
-			ShippedQuantity:   item.ShippedQuantity,
+			Cantidad:          item.ShippedQuantity,
 			BackorderQuantity: backorderQty,
 			UpdatedBy:         pgtype.Int4{Int32: userID, Valid: userID != 0},
 		})
@@ -862,7 +862,10 @@ func (h *PedidosHandler) notificarBackorder(ctx context.Context, backorderID int
 
 func (h *PedidosHandler) ListarModificaciones(c *gin.Context) {
 	fechaInicio, fechaFin := parseDateRange(c)
-	modificaciones, err := h.queries.ListarModificaciones(c.Request.Context(), fechaInicio, fechaFin)
+	modificaciones, err := h.queries.ListarModificaciones(c.Request.Context(), db.ListarModificacionesParams{
+		Column1: fechaInicio,
+		Column2: fechaFin,
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al listar modificaciones: " + err.Error()})
 		return

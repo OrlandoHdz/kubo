@@ -13,6 +13,7 @@ import (
 func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg *utils.ConfigOSS, emailCfg *email.Config) {
 	userHandler := handlers.NewUsuarioHandler(queries)
 	authHandler := handlers.NewAuthHandler(queries)
+	permisoHandler := handlers.NewPermisoHandler(queries)
 	solicitudHandler := handlers.NewSolicitudRegistroHandler(queries)
 	clientesIntegracionHandler := handlers.NewClientesIntegracionHandler(queries)
 	facturasIntegracionHandler := handlers.NewFacturasIntegracionHandler(queries)
@@ -55,6 +56,9 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 		// 2. Rutas protegidas
 		v1.Use(auth.AuthMiddleware())
 
+		// Perfil del usuario autenticado (incluye permisos del menú)
+		v1.GET("/perfil", authHandler.Perfil)
+
 		// Solicitudes (Admin)
 		solicitudes := v1.Group("/solicitud-registro")
 		{
@@ -69,6 +73,14 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			usuarios.GET("/", userHandler.Listar)
 			usuarios.PATCH("/:id/status", userHandler.ActualizarEstado)
 			usuarios.PATCH("/:id/password", userHandler.CambiarPassword)
+		}
+
+		// Permisos del menú (Panel de Control)
+		permisos := v1.Group("/permisos")
+		{
+			permisos.GET("", permisoHandler.ListarPermisos)
+			permisos.GET("/usuario/:id", permisoHandler.ListarPermisosUsuario)
+			permisos.PUT("/usuario/:id", permisoHandler.ActualizarPermisosUsuario)
 		}
 
 		// Clientes Integración
@@ -197,7 +209,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			pagoFacturas.GET("/:id", pagoFacturasHandler.ObtenerPagada)
 		}
 
-			// Estado de Cuenta
+		// Estado de Cuenta
 		v1.GET("/estado-cuenta", estadoCuentaHandler.ObtenerEstadoCuenta)
 
 		// Dashboard Principal del Cliente

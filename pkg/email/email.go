@@ -297,7 +297,7 @@ func buildBackorderHTML(bo BackorderData) string {
               <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                   <tr style="background: #c9540e; color: #ffffff;">
-                    <th style="padding: 10px; text-align: left;">SKU</th>
+                    <th style="padding: 10px; text-align: left;">CÓDIGO</th>
                     <th style="padding: 10px; text-align: left;">Producto</th>
                     <th style="padding: 10px; text-align: center;">Cant.</th>
                     <th style="padding: 10px; text-align: right;">Precio Unit.</th>
@@ -401,7 +401,7 @@ func buildOrderHTML(o OrderData) string {
               <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                   <tr style="background: #491212; color: #ffffff;">
-                    <th style="padding: 10px; text-align: left;">SKU</th>
+                    <th style="padding: 10px; text-align: left;">CÓDIGO</th>
                     <th style="padding: 10px; text-align: left;">Producto</th>
                     <th style="padding: 10px; text-align: center;">Cant.</th>
                     <th style="padding: 10px; text-align: right;">Precio Unit.</th>
@@ -558,7 +558,7 @@ func buildOrderStatusHTML(o OrderData) string {
               <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                   <tr style="background: #491212; color: #ffffff;">
-                    <th style="padding: 10px; text-align: left;">SKU</th>
+                    <th style="padding: 10px; text-align: left;">CÓDIGO</th>
                     <th style="padding: 10px; text-align: left;">Producto</th>
                     <th style="padding: 10px; text-align: center;">Cant.</th>
                     <th style="padding: 10px; text-align: right;">Precio Unit.</th>
