@@ -42,7 +42,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 3. Generar Token
+	// 3. Validar que el usuario esté activo
+	if user.IsActive.Valid && !user.IsActive.Bool {
+		c.JSON(http.StatusForbidden, map[string]any{
+			"error":   "Tu usuario ha sido desactivado. Por favor, valida con el administrador.",
+			"message": "Tu usuario ha sido desactivado. Por favor, valida con el administrador.",
+		})
+		return
+	}
+
+	// 4. Generar Token
 	token, err := auth.GenerarToken(user.ID, user.Email, user.Rol)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, map[string]any{"error": "Error al generar sesión"})
