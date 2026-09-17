@@ -1,0 +1,86 @@
+Módulo de Lealtad (Stack: Go 1.26 + sqlc + Quasar)
+Documento de requerimientos para el desarrollo de software asistido por IA
+
+1. Visión General del Proyecto
+Implementar un Programa de Fidelización de 3 Niveles personalizables para una tienda en línea. El administrador podrá definir el nombre de cada nivel y subir una insignia. Se incluirá un Simulador Financiero de Rentabilidad interactivo en el panel para evaluar el ROI antes de activar los premios.
+
+2. Requerimientos Funcionales
+Gestión de Niveles (CRUD): El administrador gestionará los niveles asignando un nombre personalizado y un archivo de imagen (.png, .svg, .jpg).
+
+Métricas de Evaluación: El ascenso de nivel dependerá de la Compra mínima (ticket promedio) y el Volumen mensual acumulado.
+
+Simulador (Simulation Mode): Vista con controles dinámicos para probar variables (Nivel, Compra Mínima, Volumen Mensual) y visualizar en tiempo real si el escenario genera un "ROI positivo" o "ROI negativo".
+
+3. Diseño de Base de Datos Sugerido (Esquema SQL para sqlc)
+El backend utilizará sqlc para generar los modelos. A continuación, la estructura DDL (schema.sql) esperada:
+
+SQL
+CREATE TABLE loyalty_tiers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    image_url TEXT,
+    tier_rank INT NOT NULL CHECK (tier_rank IN (1, 2, 3)),
+    min_purchase DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    monthly_volume_req DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE customer_profiles (
+    user_id INT PRIMARY KEY,
+    current_tier_id INT REFERENCES loyalty_tiers(id),
+    current_monthly_volume DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+4. Lógica de Simulación (Backend en Go)
+Implementa esta lógica en un handler/servicio de Go 1.26:
+
+Go
+package loyalty
+
+type SimulationRequest struct {
+    MinPurchase   float64 `json:"min_purchase"`
+    MonthlyVolume float64 `json:"monthly_volume"`
+    RewardCost    float64 `json:"reward_cost"`
+    StoreMargin   float64 `json:"store_margin"`
+}
+
+type SimulationResponse struct {
+    Status   string  `json:"status"`
+    NetValue float64 `json:"net_value"`
+}
+
+// CalculateSimulationROI evalúa la rentabilidad del escenario
+func CalculateSimulationROI(req SimulationRequest) SimulationResponse {
+    grossProfit := req.MonthlyVolume * (req.StoreMargin / 100)
+    estimatedTransactions := req.MonthlyVolume / req.MinPurchase
+    totalRewardCost := estimatedTransactions * req.RewardCost
+    netProfit := grossProfit - totalRewardCost
+
+    if netProfit > 0 {
+        return SimulationResponse{Status: "ROI positivo", NetValue: netProfit}
+    }
+    return SimulationResponse{Status: "ROI negativo", NetValue: netProfit}
+}
+5. Instrucciones Directas para la IA Generadora de Código
+Instrucciones de Backend (Go 1.26 + sqlc):
+
+Escribe el archivo schema.sql con el DDL provisto.
+
+Genera un archivo query.sql con las anotaciones de sqlc (ej. -- name: CreateLoyaltyTier :one) para hacer un CRUD completo de loyalty_tiers.
+
+Crea los handlers HTTP en Go usando el código generado por sqlc (típicamente *db.Queries).
+
+Para la creación/actualización de niveles, implementa lógica multipart/form-data para recibir el archivo de la insignia, guardarlo, y pasar la URL resultante al método de sqlc.
+
+Crea un endpoint POST que reciba el JSON del simulador (SimulationRequest), ejecute la función pura CalculateSimulationROI y devuelva el JSON.
+
+Instrucciones de Frontend (Quasar Framework / Vue 3):
+
+Usa la Composition API (<script setup>).
+
+Para el CRUD de Niveles: Crea un formulario usando q-input para el nombre y q-file para la subida de la imagen. Maneja el envío al backend como FormData.
+
+Para el Simulador: Haz una petición GET al backend para llenar un componente q-select (que muestre la imagen y el nombre del nivel usando los slots de Quasar). Usa el componente q-slider para manipular la 'Compra Mínima' y el 'Volumen Mensual'.
+
+Muestra el resultado tipografiando con las clases CSS utilitarias de Quasar (ej. text-positive o text-negative) bajo un esquema Dark Mode.

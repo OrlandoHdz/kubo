@@ -1,0 +1,209 @@
+# Conexión a la base de datos local
+pgcli postgres://ukubo:'kubo.W.3789K'@localhost:5432/kubo_db
+
+
+
+
+¿Cómo usar los datos en tus Handlers?
+Una vez que el Middleware (que definimos en el paso anterior) guarda los datos con c.Set,
+puedes recuperarlos en cualquier función de tus Handlers así:
+
+
+func (h *UsuarioHandler) Listar(c *gin.Context) {
+    // Recuperar el ID del usuario que hace la petición
+    userID, _ := c.Get("userID")
+    userRol, _ := c.Get("userRol")
+
+    // Ahora puedes usar userID para filtrar datos o userRol para denegar acceso
+    if userRol != "admin" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "No tienes permisos"})
+        return
+    }
+    
+    // ... resto de tu lógica
+}
+
+
+# Conectarme al servidor de Alibaba Cloud
+ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
+
+
+# Conectar a postgresql Alibaba Cloud - Superusuario
+pgcli postgres://admin:'kw29zxu12001'@43.112.73.182:5432/postgres
+
+# Crear base de datos
+CREATE DATABASE kubo_db;    
+CREATE USER ukubo WITH PASSWORD 'kubo.W.3789K';
+GRANT ALL PRIVILEGES ON DATABASE kubo_db TO ukubo;
+GRANT ALL ON SCHEMA public TO ukubo;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO ukubo;
+
+pgcli postgres://ukubo:'kubo.W.3789K'@43.112.73.182:5432/kubo_db
+
+###############################
+# Para subir a produccion el binario de kubo-api, estos comandos se tienen que correr en la carpeta de la aplicacion donde esta el Dockerfile
+## Crear la imagen de Docker en mi Mac
+docker build --platform linux/amd64 -t kubo-api:v1 .
+
+## Emaaquetamos la imagen
+docker save -o kubo-api.tar kubo-api:v1
+
+## Probamos la imagen localmente
+docker run -p 8080:8080 kubo-api:v1
+
+## Subimos la imagen a Alibaba Cloud
+scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem kubo-api.tar ecs-user@43.112.73.182:/home/ecs-user/
+
+
+## Nos conectamos al servidor
+ssh -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem ecs-user@43.112.73.182
+
+## Ejecutamos la imagen
+sudo docker load -i kubo-api.tar
+
+## Detener el anterior container
+sudo docker stop <CONTAINER_ID>
+
+
+## Levanta el nuevo container con volumenes
+sudo docker run -d \
+  -p 8080:8080 \
+  -v /home/ecs-user/uploads:/app/uploads \
+  --name kubo-api-container \
+  kubo-api:v1
+
+
+###### IMPORTANTE #######
+Se tuvo problemas con la carpeta de uploads en el servidor para que se subieran la imagen por permisos
+ya se esta creando un usuario en el Dockerfile con el id 10001 al cual se le tiene que dar permisos de
+lectura y escritura en la carpeta de uploads
+
+# Cambia la propiedad de la carpeta del host al UID que usa tu contenedor
+sudo chown -R 10001:10001 /home/ecs-user/uploads
+
+# Dale permisos de lectura y escritura
+sudo chmod -R 775 /home/ecs-user/uploads
+
+
+
+## Probar la api
+curl --location 'http://43.112.73.182:8080/api/v1/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "email": "orlando.hdz@gmail.com",
+    "password": "Tigres.2026"
+}
+'
+
+## Solo pasar el archivo docker-compose.yml es para crear la base de datos
+scp -i /Users/orlando/Proyectos/Orlando/KUBO/Documentos/Key\ Servidor/orlandokey.pem docker-compose.yml ecs-user@43.112.73.182:/home/ecs-user/app/kubo
+
+## Crear la base de datos
+docker-compose -f docker-compose.yml up -d
+
+## Ejecutar los binarios
+./bin/worker -facturas /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/FACTURAS/facturac.DBF
+./bin/worker -existencias /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/EXISTENCIAS/EXISTE.DBF
+./bin/worker -clientes /Users/orlando/Proyectos/Orlando/KUBO/BaseDatos_SAI/CLIENTES/CLIENTES.DBF
+
+
+https://testcolecto.banregio.com/adq/  
+
+https://testhub.banregio.com/adq 
+
+## Solicita token
+curl -k -X POST https://testcolecto.banregio.com/adq \
+  -F "BNRG_ID_AFILIACION=8379502" \
+  -F "BNRG_ID_MEDIO=JCZSH8TV" \
+  -F "BNRG_NUMERO_TARJETA=4456530000001096" \
+  -F "BNRG_FECHA_EXP=1226" \
+  -F "BNRG_CODIGO_SEGURIDAD=123" \
+  -F "BNRG_FOLIO=FOLIO123456" \
+  -F "BNRG_HORA_LOCAL=094130" \
+  -F "BNRG_FECHA_LOCAL=20260604" \
+  -F "BNRG_MODO_ENTRADA=MANUAL" \
+  -F "BNRG_CMD_TRANS=CREACION_TOKEN"  
+
+## Genera la venta
+curl -k -X POST https://testcolecto.banregio.com/adq \
+  -F "BNRG_ID_AFILIACION=8379502" \
+  -F "BNRG_ID_MEDIO=JCZSH8TV" \
+  -F "BNRG_NUMERO_TARJETA=4456530000001096" \
+  -F "BNRG_FECHA_EXP=1226" \
+  -F "BNRG_CODIGO_SEGURIDAD=123" \
+  -F "BNRG_MONTO_TRANS=100.00" \
+  -F "BNRG_FOLIO=FOLIO123456" \
+  -F "BNRG_MODO_TRANS=AUT" \
+  -F "BNRG_HORA_LOCAL=094130" \
+  -F "BNRG_FECHA_LOCAL=09062026" \
+  -F "BNRG_URL_RESPUESTA"=https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook \
+  -F "BNRG_MODO_ENTRADA=MANUAL" \
+  -F "BNRG_CMD_TRANS=VENTA"
+
+
+
+## Ejemplo de mi spy-webhook
+#Local
+curl -X POST http://localhost:8080/api/v1/spy-webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_transaccion": "tx_987654321",
+    "estado": "aprobado",
+    "monto": 150.50,
+    "moneda": "MXN",
+    "metodo_pago": "tarjeta_credito",
+    "detalles": {
+      "marca": "Visa",
+      "ultimos_cuatro": "4242",
+      "codigo_autorizacion": "AUTH123"
+    },
+    "fecha_creacion": "2026-06-09T16:40:00Z"
+  }'
+#Alibaba
+curl -X POST https://api.pruebas-arsenal.almacendigital.work/api/v1/spy-webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_transaccion": "tx_987654321",
+    "estado": "aprobado",
+    "monto": 150.50,
+    "moneda": "MXN",
+    "metodo_pago": "tarjeta_credito",
+    "detalles": {
+      "marca": "Visa",
+      "ultimos_cuatro": "4242",
+      "codigo_autorizacion": "AUTH123"
+    },
+    "fecha_creacion": "2026-06-09T16:40:00Z"
+  }'
+
+# Correr opencode
+npx opencode-ai --port 37217
+
+## Se agrego la llave foreana a la tabla de productos con productos sai
+ALTER TABLE productos_padre 
+ADD COLUMN cve_prod_integracion VARCHAR(20) REFERENCES productos_integracion(cve_prod);
+
+
+## Sacar un respaldo de la base de datos
+sudo docker exec -t kubo-db pg_dump -U ukubo -d kubo_db > /home/ecs-user/respaldo_kubo_db.sql
+Esta es la contraseña: kubo.W.3789K
+psql -U postgres -d kubo_db -f respaldo_kubo_db.sql
+
+
+
+
+curl --location --request PATCH 'https://api.pruebas-arsenal.almacendigital.work/api/v1/productos/34' \
+--header 'Accept: application/json, text/plain, */*' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX2lkIjoxLCJlbWFpbCI6Im9ybGFuZG8uaGR6QGdtYWlsLmNvbSIsInJvbCI6IkFkbWluIiwiZXhwIjoxNzgxNzcyODY3LCJpYXQiOjE3ODE3NjIwNjd9.22bKKlXPDvZGycK5eGphT8wtnRFVtJE99UZcVfof8lk' \
+--form 'cve_prod_integracion="AR-DM250"' \
+--form 'descripcion="DIFUSOR DM250 T/MILLER ARW"' \
+--form 'descripcion_extendida="Esto es una prueba"' \
+--form 'foto_url="/uploads/productos/fotos/178129733_AR-DM250.jpg"' \
+--form 'ficha_tecnica="/uploads/productos/fichas/178129733_Ficha_Tecnica_Difusor_DM250_T-MILLER_ARW.pdf"' \
+--form 'created_by="1"' \
+--form 'updated_by="1"' \
+--form 'foto=@"/Users/orlando/Downloads/DISENOFOTOSPAGINAWEB.jpg"' \
+--form 'ficha_tecnica=@"/Users/orlando/Downloads/Ficha_Tecnica_Difusor_DM250_T-MILLER_ARW.pdf"'
+
+
+

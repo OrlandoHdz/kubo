@@ -1,0 +1,344 @@
+El cliente ha aprobado el desarrollo de un módulo de recomendaciones personalizadas para nuestra tienda en línea.
+
+Contexto técnico:
+- Backend: Go
+- Frontend: Quasar/Vue
+- Base de datos: [indicar PostgreSQL, MySQL u otra]
+- ORM o acceso a datos: [GORM, sqlx, database/sql u otro]
+- Sistema de autenticación actual: [describir brevemente]
+- Sistema de carrito existente: [describir brevemente]
+- Estados de órdenes válidos: [pagada, completada, entregada, etc.]
+
+OBJETIVO
+
+Implementar la primera versión de un módulo que recomiende productos a cada cliente basándose en sus compras anteriores.
+
+La recomendación debe corresponder a la opción A:
+
+“Compraste esto, también podría interesarte”.
+
+El sistema debe analizar los productos que el cliente compró anteriormente y sugerir productos relacionados por categoría, marca, rango de precio y recencia de compra.
+
+No utilizar machine learning, inteligencia artificial ni servicios externos en esta primera versión. La solución debe basarse en reglas claras, transparentes y fáciles de mantener.
+
+FASE 1: ANÁLISIS DEL PROYECTO
+
+Antes de modificar código, inspecciona cuidadosamente el proyecto e identifica:
+
+1. Cómo están modelados:
+   - Usuarios o clientes.
+   - Productos.
+   - Categorías.
+   - Marcas.
+   - Órdenes.
+   - Detalles de órdenes.
+   - Inventario.
+   - Carrito de compras.
+
+2. Cómo se relacionan las tablas o estructuras.
+
+3. Qué estados representan una orden válida y completada.
+
+4. Cómo funciona actualmente:
+   - La autenticación.
+   - La autorización.
+   - Las rutas del backend.
+   - Las respuestas de la API.
+   - El acceso a la base de datos.
+   - Las peticiones del frontend.
+   - El carrito de compras.
+
+5. Qué convenciones utiliza actualmente el proyecto para:
+   - Nombres de archivos.
+   - Nombres de funciones.
+   - Manejo de errores.
+   - Validación.
+   - Logging.
+   - Tests.
+   - Migraciones.
+   - Componentes de Quasar.
+
+No inventes tablas, campos, rutas ni modelos si ya existen equivalentes. Adapta la solución a la estructura actual.
+
+No reemplaces el sistema de autenticación actual ni implementes autenticación local nueva.
+
+Después del análisis, presenta un plan técnico que incluya:
+
+- Archivos que se modificarán.
+- Archivos que se crearán.
+- Cambios en base de datos, si fueran necesarios.
+- Nuevos endpoints.
+- Componentes frontend.
+- Estrategia de cálculo de recomendaciones.
+- Pruebas que se agregarán.
+- Posibles riesgos o decisiones pendientes.
+
+Si no existen bloqueos importantes, continúa con la implementación por etapas.
+
+FASE 2: REGLAS DE RECOMENDACIÓN
+
+Implementa las siguientes reglas:
+
+1. Utiliza solamente órdenes:
+   - Pagadas.
+   - Completadas.
+   - Entregadas.
+
+2. Excluye órdenes:
+   - Canceladas.
+   - Pendientes.
+   - Fallidas.
+   - Reembolsadas.
+
+3. Utiliza inicialmente el historial de compras de los últimos 12 meses. El periodo debe quedar configurable.
+
+4. Obtén los productos que el cliente compró recientemente.
+
+5. Genera productos candidatos utilizando estas señales:
+
+   - Misma categoría que un producto comprado.
+   - Misma marca, cuando exista la información.
+   - Precio similar al producto comprado, inicialmente con un rango de +/- 30%.
+   - Productos relacionados existentes en el catálogo, si ya existe esa relación.
+   - Popularidad o cantidad de ventas, solamente si ese dato ya existe en el sistema.
+
+6. Ordena las recomendaciones tomando en cuenta:
+
+   - Coincidencia de categoría.
+   - Coincidencia de marca.
+   - Cercanía del precio.
+   - Recencia de la compra relacionada.
+   - Disponibilidad.
+   - Popularidad, si está disponible.
+
+7. Utiliza un sistema de puntuación transparente. Por ejemplo:
+
+   - Coincidencia de categoría: 40%.
+   - Coincidencia de marca: 25%.
+   - Cercanía de precio: 20%.
+   - Recencia de compra: 15%.
+
+Adapta los pesos si la estructura actual del proyecto requiere una solución diferente, pero documenta la decisión.
+
+8. Excluye de los resultados:
+
+   - Productos inactivos.
+   - Productos eliminados.
+   - Productos sin stock, si la tienda no permite vender sin inventario.
+   - Productos no visibles para el cliente.
+   - Productos fuera de venta.
+   - Productos que el cliente haya comprado recientemente, salvo que sean consumibles o recurrentes.
+
+9. Evita mostrar demasiados productos de la misma categoría. Diversifica los resultados cuando sea posible.
+
+10. El número máximo inicial de recomendaciones será de 10 y debe ser configurable.
+
+11. Cada recomendación debe incluir una razón breve, por ejemplo:
+
+   - “Relacionado con tus compras anteriores”.
+   - “Similar a un producto que compraste”.
+   - “De la misma categoría que tus compras recientes”.
+
+12. Si el cliente no tiene historial suficiente:
+
+   - Mostrar productos populares.
+   - O mostrar productos destacados de categorías relevantes.
+   - O mostrar la respuesta vacía si no existe una fuente adecuada en el sistema.
+
+No inventes productos, estadísticas ni información que no exista.
+
+FASE 3: BACKEND EN GO
+
+Implementa un endpoint autenticado para obtener las recomendaciones del cliente actual.
+
+Utiliza una ruta coherente con las convenciones existentes. Si no existe una convención, utiliza preferentemente:
+
+GET /api/recommendations
+
+Parámetros opcionales:
+
+- limit
+- lookbackDays
+- categoryId, solamente si el sistema ya utiliza este tipo de filtro
+
+Requisitos de seguridad:
+
+1. Obtén el cliente a partir de la sesión o mecanismo de autenticación existente.
+
+2. No permitas que el navegador envíe un customerId para consultar recomendaciones de otro cliente.
+
+3. Si se requiere una ruta administrativa, sepárala y aplica los permisos correspondientes.
+
+4. Valida todos los parámetros.
+
+5. Define un límite máximo para evitar consultas excesivas.
+
+6. Usa consultas parametrizadas.
+
+7. No expongas información privada del historial del cliente.
+
+8. Mantén el comportamiento actual de autenticación y autorización.
+
+Organiza la implementación separando responsabilidades:
+
+- Handler HTTP.
+- Validación de parámetros.
+- Servicio de recomendaciones.
+- Acceso a datos o repositorio.
+- Cálculo de puntuación.
+- Filtros de disponibilidad.
+- Generación de razones.
+- Serialización de respuesta.
+
+Evita colocar toda la lógica dentro del handler.
+
+La respuesta debe adaptarse al formato actual de la API. Como referencia, podría tener una estructura similar a:
+
+{
+  "items": [
+    {
+      "productId": 123,
+      "name": "Nombre del producto",
+      "description": "Descripción del producto",
+      "imageUrl": "https://...",
+      "price": 99.99,
+      "categoryId": 5,
+      "categoryName": "Categoría",
+      "brandId": 2,
+      "brandName": "Marca",
+      "score": 0.87,
+      "reason": "Relacionado con tus compras anteriores"
+    }
+  ],
+  "total": 1
+}
+
+No agregues campos que no existan actualmente sin explicar de dónde se obtendrán.
+
+Si el cálculo requiere una consulta pesada, comienza con la solución más simple compatible con la arquitectura actual. No agregues Redis, colas ni infraestructura adicional salvo que realmente sea necesario.
+
+Si se requiere una tabla nueva o migración:
+
+- Crea la migración.
+- Agrega índices adecuados.
+- Incluye rollback si el proyecto utiliza rollback.
+- Documenta el propósito de la tabla.
+- No elimines ni reemplaces datos existentes.
+- No ejecutes migraciones destructivas sin confirmación.
+
+FASE 4: FRONTEND EN QUASAR
+
+Integra la funcionalidad en la interfaz existente usando los componentes y estilos actuales de Quasar.
+
+Agrega una sección de recomendaciones en la ubicación más adecuada, preferentemente:
+
+- Página principal para usuarios autenticados.
+- O página de cuenta/perfil del cliente.
+
+El componente debe:
+
+1. Consultar el endpoint real.
+
+2. No utilizar datos simulados en el flujo final.
+
+3. Mostrar:
+   - Imagen del producto.
+   - Nombre.
+   - Precio.
+   - Disponibilidad.
+   - Razón de la recomendación.
+   - Acción para ver el detalle.
+   - Acción para agregar al carrito.
+
+4. Utilizar el flujo actual del carrito.
+
+5. Implementar los estados:
+   - Cargando.
+   - Resultados.
+   - Sin recomendaciones.
+   - Error recuperable.
+   - Usuario no autenticado.
+
+6. Ser responsive para:
+   - Móvil.
+   - Tablet.
+   - Escritorio.
+
+7. Mantener el diseño y las convenciones visuales actuales.
+
+8. No modificar innecesariamente el login, checkout ni carrito.
+
+9. No usar emojis en la interfaz.
+
+10. No crear botones o acciones que parezcan funcionar si aún no tienen integración real.
+
+Si el frontend utiliza servicios, composables, stores o clientes HTTP existentes, reutilízalos.
+
+FASE 5: MÉTRICAS PREPARATORIAS
+
+Si el proyecto ya cuenta con un sistema de eventos, prepara la estructura para registrar:
+
+- Visualización de recomendación.
+- Clic en recomendación.
+- Producto recomendado agregado al carrito.
+- Compra de un producto recomendado.
+
+No agregues una plataforma externa de analítica en esta fase. Si no existe un sistema de eventos, documenta cómo podría agregarse posteriormente.
+
+FASE 6: PRUEBAS
+
+Agrega las pruebas correspondientes a las convenciones actuales del proyecto.
+
+Backend:
+
+1. Cliente con varias compras válidas.
+2. Cliente sin compras.
+3. Cliente con solamente órdenes canceladas.
+4. Productos sin stock.
+5. Productos inactivos.
+6. Productos no visibles.
+7. Productos comprados recientemente.
+8. Cliente no autenticado.
+9. Parámetro limit inválido.
+10. Parámetro limit superior al máximo permitido.
+11. Caso sin productos candidatos.
+12. Cliente que no puede consultar recomendaciones de otro cliente.
+13. Validar que las órdenes no válidas sean excluidas.
+14. Validar que el resultado esté ordenado por puntuación.
+15. Validar la ausencia de consultas N+1 cuando existan herramientas para detectarlas.
+
+Frontend:
+
+1. Estado de carga.
+2. Lista con recomendaciones.
+3. Estado vacío.
+4. Error del endpoint.
+5. Usuario no autenticado.
+6. Navegación al detalle del producto.
+7. Agregar una recomendación al carrito.
+8. Visualización correcta en móvil y escritorio.
+
+FASE 7: DOCUMENTACIÓN Y VALIDACIÓN FINAL
+
+Al finalizar:
+
+1. Ejecuta los tests disponibles.
+2. Ejecuta lint, typecheck o validaciones equivalentes.
+3. Verifica que el backend compile.
+4. Verifica que el frontend compile.
+5. Verifica que no se hayan roto rutas existentes.
+6. Verifica que el carrito continúe funcionando.
+7. Verifica que la autenticación continúe funcionando.
+8. Revisa consultas y tiempos de respuesta.
+9. Documenta el nuevo endpoint.
+10. Documenta las reglas de puntuación.
+11. Documenta cómo cambiar:
+    - El número máximo de recomendaciones.
+    - El periodo histórico.
+    - Los pesos de puntuación.
+12. Incluye ejemplos de request y response.
+13. Resume todos los archivos creados y modificados.
+14. Indica claramente cualquier parte que no se haya podido implementar.
+15. No ocultes errores con fallbacks silenciosos.
+16. No cambies tecnologías ni arquitectura sin justificarlo.
+17. No elimines funcionalidad existente.

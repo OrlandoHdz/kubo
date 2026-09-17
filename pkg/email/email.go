@@ -670,6 +670,69 @@ func (c *Config) SendDevolucionNotification(dv DevolucionData, clientEmail strin
 	}
 }
 
+type SolicitudDistribuidorData struct {
+	NombreComercial string
+	NombreContacto  string
+	Tipo            string
+	Folio           string
+	RFC             string
+	Fecha           string
+}
+
+func (c *Config) SendSolicitudDistribuidorNotification(sd SolicitudDistribuidorData, clientEmail string) {
+	if c == nil || c.Password == "" {
+		log.Println("Email: configuración de correo incompleta, omitiendo notificación de solicitud de registro")
+		return
+	}
+
+	esDistribuidor := sd.Tipo == "Distribuidor" || sd.Tipo == "Ambos"
+	subject := "Solicitud de Registro Recibida"
+	if esDistribuidor {
+		subject = "Solicitud de Distribuidor Recibida"
+	}
+	body := buildSolicitudDistribuidorHTML(sd, esDistribuidor)
+
+	recipients := []string{clientEmail}
+	recipients = append(recipients, c.DefaultRecipients...)
+
+	log.Printf("Email: enviando notificación de solicitud de registro a %d destinatarios (primero: %s)", len(recipients), clientEmail)
+	if err := c.SendToMultiple(recipients, subject, body); err != nil {
+		log.Printf("Email: error al enviar notificación de solicitud de registro a %s: %v", clientEmail, err)
+		return
+	}
+	log.Printf("Email: notificación de solicitud de registro enviada correctamente a %s y %d copias", clientEmail, len(c.DefaultRecipients))
+}
+
+type SolicitudEstatusData struct {
+	NombreComercial string
+	Tipo            string
+	Folio           string
+	RFC             string
+	Fecha           string
+	Estatus         string
+	Observacion     string
+}
+
+func (c *Config) SendSolicitudEstatusNotification(se SolicitudEstatusData, clientEmail string) {
+	if c == nil || c.Password == "" {
+		log.Println("Email: configuración de correo incompleta, omitiendo notificación de estatus de solicitud")
+		return
+	}
+
+	subject := fmt.Sprintf("Solicitud de Registro %s", se.Estatus)
+	body := buildSolicitudEstatusHTML(se)
+
+	recipients := []string{clientEmail}
+	recipients = append(recipients, c.DefaultRecipients...)
+
+	log.Printf("Email: enviando notificación de estatus de solicitud a %d destinatarios (primero: %s)", len(recipients), clientEmail)
+	if err := c.SendToMultiple(recipients, subject, body); err != nil {
+		log.Printf("Email: error al enviar notificación de estatus de solicitud a %s: %v", clientEmail, err)
+		return
+	}
+	log.Printf("Email: notificación de estatus de solicitud enviada correctamente a %s y %d copias", clientEmail, len(c.DefaultRecipients))
+}
+
 func (c *Config) SendDevolucionStatusNotification(dv DevolucionData, clientEmail string) {
 	if c == nil || c.Password == "" {
 		return
@@ -945,4 +1008,183 @@ func buildPagoFacturaHTML(pf PagoFacturaData) string {
   </table>
 </body>
 </html>`, pf.ClienteName, pf.Fecha, pf.MetodoPago, terminacionRow, facturasRows, pf.Total)
+}
+
+func buildSolicitudDistribuidorHTML(sd SolicitudDistribuidorData, esDistribuidor bool) string {
+	titulo := "Solicitud de Registro Recibida"
+	parrafoBienvenida := `Hemos recibido su solicitud de registro.<br>Agradecemos su interés en formar parte de Arsenal Welds y le confirmamos que su petición fue recibida correctamente.`
+	if esDistribuidor {
+		titulo = "Solicitud de Distribuidor Recibida"
+		parrafoBienvenida = `Hemos recibido su solicitud para registrarse como <strong>Distribuidor</strong>.<br>Agradecemos su interés en formar parte de Arsenal Welds y le confirmamos que su petición fue recibida correctamente.`
+	}
+
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background: #f5f5f5; padding: 20px;">
+    <tr>
+      <td align="left">
+        <table width="70%%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #491212, #7a1a1a); padding: 25px; text-align: center;">
+              <img src="https://kubo-producto.oss-us-east-1.aliyuncs.com/logos/arsenal_logo1t.png" alt="Arsenal Welds" style="max-height: 55px; margin-bottom: 10px;">
+              <h1 style="color: #ffffff; margin: 10px 0 0; font-size: 22px;">%s</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 16px; color: #333;">Estimado %s,</p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                %s
+              </p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Nuestro equipo revisará la información proporcionada y muy pronto nos pondremos en contacto con usted para
+                compartir sus <strong>credenciales de acceso</strong> a la plataforma.
+              </p>
+
+              <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td style="padding: 8px 10px; background: #f8f9fa; font-weight: bold; color: #333; border-bottom: 2px solid #491212;">Folio</td>
+                  <td style="padding: 8px 10px; background: #f8f9fa; color: #491212; border-bottom: 2px solid #491212;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Nombre Comercial</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">RFC</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Fecha de solicitud</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+              </table>
+
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Si tiene alguna duda o requiere información adicional, no dude en contactarnos.
+              </p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Atentamente,<br>
+                <strong>Arsenal Welds</strong>
+              </p>
+              <p style="font-size: 14px; color: #555; margin-top: 20px;">
+                <a href="https://www.arsenalwelds.com" style="color: #491212; text-decoration: none; font-weight: bold;">www.arsenalwelds.com</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+              Arsenal Welds — ventas@arsenalwelds.com
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`, titulo, sd.NombreComercial, parrafoBienvenida, sd.Folio, sd.NombreComercial, sd.RFC, sd.Fecha)
+}
+
+func buildSolicitudEstatusHTML(se SolicitudEstatusData) string {
+	aprobada := se.Estatus == "Aceptado"
+	statusColor := "#2e7d32"
+	statusBadgeBg := "#e8f5e9"
+	statusText := "Aceptada"
+	if !aprobada {
+		statusColor = "#c62828"
+		statusBadgeBg = "#ffebee"
+		statusText = "Rechazada"
+	}
+
+	parrafo := fmt.Sprintf(`Le informamos que su solicitud de registro fue <strong>%s</strong>.<br>Solicitud presentada el %s.`, statusText, se.Fecha)
+
+	notaSection := ""
+	if se.Observacion != "" {
+		notaLabel := "Nota del administrador"
+		if !aprobada {
+			notaLabel = "Motivo del rechazo"
+		}
+		notaHTML := strings.ReplaceAll(se.Observacion, "\n", "<br>")
+		notaSection = fmt.Sprintf(`
+              <div style="background: %s; border: 1px solid %s; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                <div style="font-weight: bold; color: %s; margin-bottom: 6px;">%s</div>
+                <div style="color: #555; font-size: 14px; line-height: 1.5;">%s</div>
+              </div>`, statusBadgeBg, statusColor, statusColor, notaLabel, notaHTML)
+	}
+
+	acceso := `<p style="font-size: 15px; color: #555; line-height: 1.6;">
+                En breve nuestro equipo se pondrá en contacto con usted para compartir sus <strong>credenciales de acceso</strong> a la plataforma y pueda comenzar a realizar sus pedidos.
+              </p>`
+	if !aprobada {
+		acceso = `<p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Si considera que esto es un error o desea volver a enviar su información, no dude en contactarnos.
+              </p>`
+	}
+
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background: #f5f5f5; padding: 20px;">
+    <tr>
+      <td align="left">
+        <table width="70%%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #491212, #7a1a1a); padding: 25px; text-align: center;">
+              <img src="https://kubo-producto.oss-us-east-1.aliyuncs.com/logos/arsenal_logo1t.png" alt="Arsenal Welds" style="max-height: 55px; margin-bottom: 10px;">
+              <h1 style="color: #ffffff; margin: 10px 0 0; font-size: 22px;">Actualización de Solicitud de Registro</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 16px; color: #333;">Estimado %s,</p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                %s
+              </p>
+
+              <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td style="padding: 8px 10px; background: #f8f9fa; font-weight: bold; color: #333; border-bottom: 2px solid #491212;">Folio</td>
+                  <td style="padding: 8px 10px; background: #f8f9fa; color: #491212; border-bottom: 2px solid #491212;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Nombre Comercial</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">RFC</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Estatus</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0;"><span style="display: inline-block; background: %s; color: %s; padding: 4px 14px; border-radius: 4px; font-weight: bold; font-size: 14px;">%s</span></td>
+                </tr>
+              </table>
+
+              %s
+
+              %s
+
+              <p style="font-size: 15px; color: #555; line-height: 1.6; margin-top: 20px;">
+                Atentamente,<br>
+                <strong>Arsenal Welds</strong>
+              </p>
+              <p style="font-size: 14px; color: #555; margin-top: 20px;">
+                <a href="https://www.arsenalwelds.com" style="color: #491212; text-decoration: none; font-weight: bold;">www.arsenalwelds.com</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+              Arsenal Welds — ventas@arsenalwelds.com
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`, se.NombreComercial, parrafo, se.Folio, se.NombreComercial, se.RFC, statusBadgeBg, statusColor, statusText, notaSection, acceso)
 }

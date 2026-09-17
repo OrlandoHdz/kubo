@@ -14,7 +14,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	userHandler := handlers.NewUsuarioHandler(queries)
 	authHandler := handlers.NewAuthHandler(queries)
 	permisoHandler := handlers.NewPermisoHandler(queries)
-	solicitudHandler := handlers.NewSolicitudRegistroHandler(queries)
+	solicitudHandler := handlers.NewSolicitudRegistroHandler(queries, emailCfg)
 	clientesIntegracionHandler := handlers.NewClientesIntegracionHandler(queries)
 	facturasIntegracionHandler := handlers.NewFacturasIntegracionHandler(queries)
 	existenciasIntegracionHandler := handlers.NewExistenciasIntegracionHandler(queries)

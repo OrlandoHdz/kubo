@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,16 +16,18 @@ import (
 	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/pkg/email"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type SolicitudRegistroHandler struct {
-	queries *db.Queries
+	queries  *db.Queries
+	emailCfg *email.Config
 }
 
-func NewSolicitudRegistroHandler(q *db.Queries) *SolicitudRegistroHandler {
-	return &SolicitudRegistroHandler{queries: q}
+func NewSolicitudRegistroHandler(q *db.Queries, e *email.Config) *SolicitudRegistroHandler {
+	return &SolicitudRegistroHandler{queries: q, emailCfg: e}
 }
 
 func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
@@ -156,10 +160,65 @@ func (h *SolicitudRegistroHandler) Crear(c *gin.Context) {
 		return
 	}
 
+	if h.emailCfg != nil {
+		go h.notificarSolicitudDistribuidor(context.Background(), id)
+	}
+
 	c.JSON(http.StatusCreated, map[string]any{
 		"message": "Solicitud creada exitosamente",
 		"id":      id,
 	})
+}
+
+func (h *SolicitudRegistroHandler) notificarSolicitudDistribuidor(ctx context.Context, id int32) {
+	log.Printf("Email: notificarSolicitudDistribuidor iniciado para solicitud %d", id)
+
+	solicitud, err := h.queries.ObtenerSolicitudByID(ctx, id)
+	if err != nil {
+		log.Printf("Email: error al obtener solicitud %d: %v", id, err)
+		return
+	}
+	if solicitud.CorreoContacto == "" {
+		log.Printf("Email: solicitud %d sin correo de contacto, omitiendo notificación", id)
+		return
+	}
+
+	sdData := email.SolicitudDistribuidorData{
+		NombreComercial: solicitud.NombreComercial,
+		NombreContacto:  solicitud.NombreContacto,
+		Tipo:            solicitud.ConsumoODistribuidor,
+		Folio:           fmt.Sprintf("SRD-%d", solicitud.ID),
+		RFC:             solicitud.Rfc,
+		Fecha:           solicitud.CreatedAt.Time.Format("02/01/2006"),
+	}
+
+	h.emailCfg.SendSolicitudDistribuidorNotification(sdData, solicitud.CorreoContacto)
+}
+
+func (h *SolicitudRegistroHandler) notificarSolicitudEstatus(ctx context.Context, id int32, estatus, observacion string) {
+	log.Printf("Email: notificarSolicitudEstatus iniciado para solicitud %d (%s)", id, estatus)
+
+	solicitud, err := h.queries.ObtenerSolicitudByID(ctx, id)
+	if err != nil {
+		log.Printf("Email: error al obtener solicitud %d: %v", id, err)
+		return
+	}
+	if solicitud.CorreoContacto == "" {
+		log.Printf("Email: solicitud %d sin correo de contacto, omitiendo notificación de estatus", id)
+		return
+	}
+
+	seData := email.SolicitudEstatusData{
+		NombreComercial: solicitud.NombreComercial,
+		Tipo:            solicitud.ConsumoODistribuidor,
+		Folio:           fmt.Sprintf("SRD-%d", solicitud.ID),
+		RFC:             solicitud.Rfc,
+		Fecha:           solicitud.CreatedAt.Time.Format("02/01/2006"),
+		Estatus:         estatus,
+		Observacion:     observacion,
+	}
+
+	h.emailCfg.SendSolicitudEstatusNotification(seData, solicitud.CorreoContacto)
 }
 
 // ParseCSF recibe un PDF, extrae su texto y parsea los campos solicitados
@@ -292,6 +351,10 @@ func (h *SolicitudRegistroHandler) ActualizarEstado(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado: " + err.Error()})
 		return
+	}
+
+	if h.emailCfg != nil && (req.Estado == "Aceptado" || req.Estado == "Rechazado") {
+		go h.notificarSolicitudEstatus(context.Background(), int32(id), req.Estado, req.Observacion)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Estado actualizado correctamente"})
