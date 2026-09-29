@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/internal/recompensas"
 	"github.com/OrlandoHdz/kubo/pkg/email"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -161,6 +162,15 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 	} else {
 		log.Printf("Email: emailCfg es nil, no se enviará notificación")
 	}
+
+	// Acumular puntos de recompensa (no-bloqueante, no afecta el pedido)
+	go recompensas.HookPedidoCompletado(
+		h.queries,
+		input.ClienteID,
+		pedido.ID,
+		input.TotalOrden,
+		input.UsuarioID,
+	)
 
 	c.JSON(http.StatusCreated, pedido)
 }

@@ -26,7 +26,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $11
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor
+RETURNING id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel
 `
 
 type ActualizarClienteParams struct {
@@ -78,6 +78,10 @@ func (q *Queries) ActualizarCliente(ctx context.Context, arg ActualizarClientePa
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.TienePrecioDistribuidor,
+		&i.NivelRecompensaID,
+		&i.SaldoPuntos,
+		&i.NivelManualFijado,
+		&i.FechaActualizacionNivel,
 	)
 	return i, err
 }
@@ -119,7 +123,7 @@ INSERT INTO clientes (
     created_by
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor
+) RETURNING id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel
 `
 
 type CrearClienteParams struct {
@@ -173,12 +177,16 @@ func (q *Queries) CrearCliente(ctx context.Context, arg CrearClienteParams) (Cli
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.TienePrecioDistribuidor,
+		&i.NivelRecompensaID,
+		&i.SaldoPuntos,
+		&i.NivelManualFijado,
+		&i.FechaActualizacionNivel,
 	)
 	return i, err
 }
 
 const getCliente = `-- name: GetCliente :one
-SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor FROM clientes
+SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel FROM clientes
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -205,12 +213,16 @@ func (q *Queries) GetCliente(ctx context.Context, id int32) (Cliente, error) {
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.TienePrecioDistribuidor,
+		&i.NivelRecompensaID,
+		&i.SaldoPuntos,
+		&i.NivelManualFijado,
+		&i.FechaActualizacionNivel,
 	)
 	return i, err
 }
 
 const getClienteByRFC = `-- name: GetClienteByRFC :one
-SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor FROM clientes
+SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel FROM clientes
 WHERE rfc = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -236,12 +248,16 @@ func (q *Queries) GetClienteByRFC(ctx context.Context, rfc string) (Cliente, err
 		&i.UpdatedBy,
 		&i.DeletedBy,
 		&i.TienePrecioDistribuidor,
+		&i.NivelRecompensaID,
+		&i.SaldoPuntos,
+		&i.NivelManualFijado,
+		&i.FechaActualizacionNivel,
 	)
 	return i, err
 }
 
 const listarClientesActivos = `-- name: ListarClientesActivos :many
-SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor FROM clientes
+SELECT id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel FROM clientes
 WHERE deleted_at IS NULL
 `
 
@@ -274,6 +290,10 @@ func (q *Queries) ListarClientesActivos(ctx context.Context) ([]Cliente, error) 
 			&i.UpdatedBy,
 			&i.DeletedBy,
 			&i.TienePrecioDistribuidor,
+			&i.NivelRecompensaID,
+			&i.SaldoPuntos,
+			&i.NivelManualFijado,
+			&i.FechaActualizacionNivel,
 		); err != nil {
 			return nil, err
 		}

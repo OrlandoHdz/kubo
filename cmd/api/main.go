@@ -9,6 +9,7 @@ import (
 	"github.com/OrlandoHdz/kubo/internal/api/routes"
 	"github.com/OrlandoHdz/kubo/internal/database"
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/internal/recompensas"
 	"github.com/OrlandoHdz/kubo/pkg/email"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/gin-contrib/cors"
@@ -59,6 +60,11 @@ func main() {
 
 	// 5. Cargar Rutas
 	routes.SetupRoutes(r, queries, pool, ossCfg, emailCfg)
+
+	// 6. Iniciar scheduler de recompensas (cron jobs en background)
+	recompensasService := recompensas.NewRecompensasService(queries)
+	scheduler := recompensas.NewScheduler(recompensasService)
+	scheduler.Start()
 
 	log.Println("🚀 Kubo API corriendo en :8080")
 	r.Run(":8080")

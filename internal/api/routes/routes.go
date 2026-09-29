@@ -26,6 +26,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 
 	clientesHandler := handlers.NewClientesHandler(queries)
 	productosHandler := handlers.NewProductosHandler(queries, ossCfg)
+	productosRecompensaHandler := handlers.NewProductosRecompensaHandler(queries, ossCfg)
 	pedidosHandler := handlers.NewPedidosHandler(queries, pool, emailCfg)
 	backordersHandler := handlers.NewBackordersHandler(queries, pool, emailCfg)
 	pagosTarjetaHandler := handlers.NewPagosTarjetaHandler(queries)
@@ -35,6 +36,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	estadoCuentaHandler := handlers.NewEstadoCuentaHandler(queries)
 	dashboardClienteHandler := handlers.NewDashboardClienteHandler(queries)
 	adminDashboardHandler := handlers.NewAdminDashboardHandler(queries)
+	recompensasHandler := handlers.NewRecompensasHandler(queries)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -141,6 +143,20 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			productos.POST("/:id/variantes", productosHandler.CrearVariante)
 		}
 
+		// Productos Recompensa (Privados - Gestión) — espejo de productos
+		productosRecompensa := v1.Group("/recompensas/productos")
+		{
+			productosRecompensa.GET("", productosRecompensaHandler.ListarPadres)
+			productosRecompensa.GET("/:id", productosRecompensaHandler.ObtenerPadre)
+			productosRecompensa.POST("", productosRecompensaHandler.CrearPadre)
+			productosRecompensa.PATCH("/:id", productosRecompensaHandler.ActualizarPadre)
+			productosRecompensa.DELETE("/:id", productosRecompensaHandler.EliminarPadre)
+
+			// Variantes ligadas al padre
+			productosRecompensa.GET("/:id/variantes", productosRecompensaHandler.ListarVariantes)
+			productosRecompensa.POST("/:id/variantes", productosRecompensaHandler.CrearVariante)
+		}
+
 		// Variantes (operaciones directas)
 		variantes := v1.Group("/variantes")
 		{
@@ -148,6 +164,15 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			variantes.PATCH("/:id", productosHandler.ActualizarVariante)
 			variantes.PATCH("/:id/stock", productosHandler.ActualizarStock)
 			variantes.DELETE("/:id", productosHandler.EliminarVariante)
+		}
+
+		// Variantes Recompensa (operaciones directas) — espejo de variantes
+		variantesRecompensa := v1.Group("/recompensas/variantes")
+		{
+			variantesRecompensa.GET("/:id", productosRecompensaHandler.ObtenerVariante)
+			variantesRecompensa.PATCH("/:id", productosRecompensaHandler.ActualizarVariante)
+			variantesRecompensa.PATCH("/:id/stock", productosRecompensaHandler.ActualizarStock)
+			variantesRecompensa.DELETE("/:id", productosRecompensaHandler.EliminarVariante)
 		}
 
 		// Pagos Tarjeta (Transacciones BanRegio)
@@ -228,5 +253,21 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			clientes.DELETE("/:id", clientesHandler.Eliminar)
 			clientes.PATCH("/:id/saldo", clientesHandler.ActualizarSaldo)
 		}
+
+		// ===== Módulo de Parámetros y Niveles =====
+		v1.GET("/recompensas/parametros", recompensasHandler.GetParametros)
+		v1.PUT("/recompensas/parametros", recompensasHandler.UpdateParametros)
+
+		niveles := v1.Group("/recompensas/niveles")
+		{
+			niveles.GET("", recompensasHandler.ListarNiveles)
+			niveles.POST("", recompensasHandler.CrearNivel)
+			niveles.PATCH("/:id", recompensasHandler.ActualizarNivel)
+			niveles.DELETE("/:id", recompensasHandler.EliminarNivel)
+		}
+
+		v1.GET("/recompensas/transacciones/:cliente_id", recompensasHandler.ListarTransaccionesCliente)
+		v1.GET("/recompensas/cliente/:id", recompensasHandler.GetInfoRecompensasCliente)
+		v1.PATCH("/recompensas/cliente/:id/nivel", recompensasHandler.AsignarNivelManual)
 	}
 }

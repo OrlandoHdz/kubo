@@ -64,6 +64,10 @@ type Cliente struct {
 	UpdatedBy               pgtype.Int4      `json:"updated_by"`
 	DeletedBy               pgtype.Int4      `json:"deleted_by"`
 	TienePrecioDistribuidor bool             `json:"tiene_precio_distribuidor"`
+	NivelRecompensaID       pgtype.Int4      `json:"nivel_recompensa_id"`
+	SaldoPuntos             int32            `json:"saldo_puntos"`
+	NivelManualFijado       bool             `json:"nivel_manual_fijado"`
+	FechaActualizacionNivel pgtype.Timestamp `json:"fecha_actualizacion_nivel"`
 }
 
 type ClientesIntegracion struct {
@@ -233,6 +237,21 @@ type HistorialFacturasPagada struct {
 	CreatedBy          pgtype.Int4      `json:"created_by"`
 }
 
+type NivelesRecompensa struct {
+	ID                       int32            `json:"id"`
+	Nombre                   string           `json:"nombre"`
+	NumeroNivel              int32            `json:"numero_nivel"`
+	PromedioCompraTrimestral pgtype.Numeric   `json:"promedio_compra_trimestral"`
+	PorcentajeDescuento      pgtype.Numeric   `json:"porcentaje_descuento"`
+	ImagenInsigniaUrl        pgtype.Text      `json:"imagen_insignia_url"`
+	CreatedAt                pgtype.Timestamp `json:"created_at"`
+	UpdatedAt                pgtype.Timestamp `json:"updated_at"`
+	DeletedAt                pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy                pgtype.Int4      `json:"created_by"`
+	UpdatedBy                pgtype.Int4      `json:"updated_by"`
+	DeletedBy                pgtype.Int4      `json:"deleted_by"`
+}
+
 type OrderModification struct {
 	ID                int32            `json:"id"`
 	OrderID           pgtype.Int4      `json:"order_id"`
@@ -263,6 +282,14 @@ type PagosFacturasDetalle struct {
 	FacturaID   int32          `json:"factura_id"`
 	NoFactura   string         `json:"no_factura"`
 	MontoPagado pgtype.Numeric `json:"monto_pagado"`
+}
+
+type ParametrosRecompensa struct {
+	ID                  int32            `json:"id"`
+	MontoCompraPorPunto pgtype.Numeric   `json:"monto_compra_por_punto"`
+	ValorPuntoPesos     pgtype.Numeric   `json:"valor_punto_pesos"`
+	UpdatedAt           pgtype.Timestamp `json:"updated_at"`
+	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 }
 
 type Pedido struct {
@@ -351,6 +378,54 @@ type ProductosPadre struct {
 	DeletedBy            pgtype.Int4      `json:"deleted_by"`
 }
 
+type ProductosRecompensaPadre struct {
+	ID                   int32            `json:"id"`
+	CveProdIntegracion   pgtype.Text      `json:"cve_prod_integracion"`
+	Titulo               pgtype.Text      `json:"titulo"`
+	Descripcion          pgtype.Text      `json:"descripcion"`
+	DescripcionExtendida pgtype.Text      `json:"descripcion_extendida"`
+	FotoUrl              pgtype.Text      `json:"foto_url"`
+	FotoUrl2             pgtype.Text      `json:"foto_url2"`
+	FotoUrl3             pgtype.Text      `json:"foto_url_3"`
+	FotoUrl4             pgtype.Text      `json:"foto_url_4"`
+	FotoUrl5             pgtype.Text      `json:"foto_url_5"`
+	FotoUrl6             pgtype.Text      `json:"foto_url_6"`
+	FotoUrl7             pgtype.Text      `json:"foto_url_7"`
+	FotoUrl8             pgtype.Text      `json:"foto_url_8"`
+	FichaTecnica         pgtype.Text      `json:"ficha_tecnica"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
+	DeletedAt            pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy            pgtype.Int4      `json:"created_by"`
+	UpdatedBy            pgtype.Int4      `json:"updated_by"`
+	DeletedBy            pgtype.Int4      `json:"deleted_by"`
+}
+
+type ProductosRecompensaVariante struct {
+	ID                int32            `json:"id"`
+	PadreID           int32            `json:"padre_id"`
+	Sku               string           `json:"sku"`
+	Medida            pgtype.Text      `json:"medida"`
+	PrecioPuntos      int32            `json:"precio_puntos"`
+	StockActual       int32            `json:"stock_actual"`
+	UnidadMedida      string           `json:"unidad_medida"`
+	LeadTimeDias      pgtype.Int4      `json:"lead_time_dias"`
+	Especificaciones  pgtype.Text      `json:"especificaciones"`
+	Multiplos         pgtype.Int4      `json:"multiplos"`
+	Categoria         pgtype.Text      `json:"categoria"`
+	Subgrupo          pgtype.Text      `json:"subgrupo"`
+	Modelo            pgtype.Text      `json:"modelo"`
+	Tipo              pgtype.Text      `json:"tipo"`
+	Marca             pgtype.Text      `json:"marca"`
+	PermitirBackorder pgtype.Bool      `json:"permitir_backorder"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
+	DeletedAt         pgtype.Timestamp `json:"deleted_at"`
+	CreatedBy         pgtype.Int4      `json:"created_by"`
+	UpdatedBy         pgtype.Int4      `json:"updated_by"`
+	DeletedBy         pgtype.Int4      `json:"deleted_by"`
+}
+
 type ProductosVariante struct {
 	ID                 int32            `json:"id"`
 	PadreID            pgtype.Int4      `json:"padre_id"`
@@ -428,6 +503,16 @@ type TransaccionesBanregio struct {
 	CreatedBy        pgtype.Int4      `json:"created_by"`
 	UpdatedBy        pgtype.Int4      `json:"updated_by"`
 	DeletedBy        pgtype.Int4      `json:"deleted_by"`
+}
+
+type TransaccionesPunto struct {
+	ID        int32            `json:"id"`
+	ClienteID int32            `json:"cliente_id"`
+	Tipo      string           `json:"tipo"`
+	Puntos    int32            `json:"puntos"`
+	PedidoID  pgtype.Int4      `json:"pedido_id"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	CreatedBy pgtype.Int4      `json:"created_by"`
 }
 
 type Usuario struct {
