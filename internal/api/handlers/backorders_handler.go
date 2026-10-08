@@ -333,17 +333,36 @@ func (h *BackordersHandler) notificarNuevoBackorder(ctx context.Context, backord
 	subtotal, _ := utils.NumericToFloat64(backorder.Subtotal)
 	iva, _ := utils.NumericToFloat64(backorder.Iva)
 	total, _ := utils.NumericToFloat64(backorder.TotalOrden)
+	descuentoPorcentaje, _ := utils.NumericToFloat64(backorder.DescuentoPorcentaje)
+
+	// Obtener nombre del nivel para mostrar en emails
+	nivelNombre := ""
+	if backorder.NivelRecompensaID.Valid && backorder.NivelRecompensaID.Int32 > 0 {
+		if nivel, err := h.queries.GetNivelRecompensa(ctx, backorder.NivelRecompensaID.Int32); err == nil {
+			nivelNombre = nivel.Nombre
+		}
+	}
 
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
 		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
 		importe := precio * float64(d.Cantidad)
+
+		// Calcular ahorro por nivel para este item
+		ahorroNivel := ""
+		if descuentoPorcentaje > 0 && nivelNombre != "" {
+			ahorroUnitario := precio * (descuentoPorcentaje / 100)
+			ahorroNivel = formatPrice(ahorroUnitario)
+		}
+
 		orderItems = append(orderItems, email.OrderItemData{
 			SKU:         d.VarianteSku.String,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    d.Cantidad,
 			Precio:      formatPrice(precio),
 			Importe:     formatPrice(importe),
+			AhorroNivel: ahorroNivel,
+			NivelNombre: nivelNombre,
 		})
 	}
 
