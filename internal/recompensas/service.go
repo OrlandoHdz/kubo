@@ -134,7 +134,7 @@ func (s *RecompensasService) EvaluarNiveles(ctx context.Context) {
 				continue
 			}
 
-			_, err = s.queries.UpdateClienteNivelAutomatico(ctx, db.UpdateClienteNivelAutomaticoParams{
+			err = s.queries.UpdateClienteNivelAutomatico(ctx, db.UpdateClienteNivelAutomaticoParams{
 				ID:                clienteID,
 				NivelRecompensaID: pgtype.Int4{Int32: nivelTarget.ID, Valid: true},
 			})

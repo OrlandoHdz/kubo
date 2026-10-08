@@ -394,7 +394,6 @@ SELECT
     c.nombre_comercial,
     c.rfc,
     c.saldo_puntos,
-    c.nivel_manual_fijado,
     c.fecha_actualizacion_nivel,
     nr.nombre AS nivel_nombre,
     nr.porcentaje_descuento AS nivel_descuento,
@@ -410,7 +409,6 @@ type ListarClientesConNivelRow struct {
 	NombreComercial         string           `json:"nombre_comercial"`
 	Rfc                     string           `json:"rfc"`
 	SaldoPuntos             int32            `json:"saldo_puntos"`
-	NivelManualFijado       bool             `json:"nivel_manual_fijado"`
 	FechaActualizacionNivel pgtype.Timestamp `json:"fecha_actualizacion_nivel"`
 	NivelNombre             pgtype.Text      `json:"nivel_nombre"`
 	NivelDescuento          pgtype.Numeric   `json:"nivel_descuento"`
@@ -431,7 +429,6 @@ func (q *Queries) ListarClientesConNivel(ctx context.Context) ([]ListarClientesC
 			&i.NombreComercial,
 			&i.Rfc,
 			&i.SaldoPuntos,
-			&i.NivelManualFijado,
 			&i.FechaActualizacionNivel,
 			&i.NivelNombre,
 			&i.NivelDescuento,
@@ -465,14 +462,13 @@ func (q *Queries) SoftDeleteNivelRecompensa(ctx context.Context, arg SoftDeleteN
 	return err
 }
 
-const updateClienteNivelAutomatico = `-- name: UpdateClienteNivelAutomatico :one
+const updateClienteNivelAutomatico = `-- name: UpdateClienteNivelAutomatico :exec
 UPDATE public.clientes
 SET
     nivel_recompensa_id = $2,
     fecha_actualizacion_nivel = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL AND nivel_manual_fijado = false
-RETURNING id
+WHERE id = $1 AND deleted_at IS NULL
 `
 
 type UpdateClienteNivelAutomaticoParams struct {
@@ -480,11 +476,9 @@ type UpdateClienteNivelAutomaticoParams struct {
 	NivelRecompensaID pgtype.Int4 `json:"nivel_recompensa_id"`
 }
 
-func (q *Queries) UpdateClienteNivelAutomatico(ctx context.Context, arg UpdateClienteNivelAutomaticoParams) (int32, error) {
-	row := q.db.QueryRow(ctx, updateClienteNivelAutomatico, arg.ID, arg.NivelRecompensaID)
-	var id int32
-	err := row.Scan(&id)
-	return id, err
+func (q *Queries) UpdateClienteNivelAutomatico(ctx context.Context, arg UpdateClienteNivelAutomaticoParams) error {
+	_, err := q.db.Exec(ctx, updateClienteNivelAutomatico, arg.ID, arg.NivelRecompensaID)
+	return err
 }
 
 const updateClienteNivelManual = `-- name: UpdateClienteNivelManual :one
@@ -493,7 +487,6 @@ const updateClienteNivelManual = `-- name: UpdateClienteNivelManual :one
 UPDATE public.clientes
 SET
     nivel_recompensa_id = $2,
-    nivel_manual_fijado = true,
     fecha_actualizacion_nivel = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3

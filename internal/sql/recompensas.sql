@@ -56,14 +56,13 @@ ORDER BY c.nombre_comercial;
 SELECT id, saldo_puntos FROM public.clientes
 WHERE saldo_puntos > 0 AND deleted_at IS NULL;
 
--- name: UpdateClienteNivelAutomatico :one
+-- name: UpdateClienteNivelAutomatico :exec
 UPDATE public.clientes
 SET
     nivel_recompensa_id = $2,
     fecha_actualizacion_nivel = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
-RETURNING id;
+WHERE id = $1 AND deleted_at IS NULL;
 
 -- ===== PARÁMETROS =====
 
