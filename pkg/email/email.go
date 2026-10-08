@@ -26,11 +26,15 @@ type OrderData struct {
 }
 
 type OrderItemData struct {
-	SKU         string
-	Descripcion string
-	Cantidad    int32
-	Precio      string
-	Importe     string
+	SKU             string
+	Descripcion     string
+	Cantidad        int32
+	Precio          string
+	Importe         string
+	// Campos opcionales para mostrar ahorro por nivel de distribuidor
+	PrecioLista     string // precio de lista para comparación
+	AhorroNivel     string // monto ahorrado por nivel en este item
+	NivelNombre     string // nombre del nivel aplicado (ej. "Platino")
 }
 
 type Config struct {
@@ -353,13 +357,19 @@ func buildBackorderHTML(bo BackorderData) string {
 func buildOrderHTML(o OrderData) string {
 	itemsRows := ""
 	for _, item := range o.Items {
+		// Si el item tiene información de ahorro por nivel, mostrar columna adicional
+		nivelInfo := ""
+		if item.AhorroNivel != "" && item.AhorroNivel != "0.00" {
+			nivelInfo = fmt.Sprintf(`<br><span style="color: #e65100; font-size: 11px; font-weight: bold;">🏆 Ahorro Nivel %s: -$%s c/u</span>`, item.NivelNombre, item.AhorroNivel)
+		}
+
 		itemsRows += fmt.Sprintf(`<tr>
-              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s%s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: center;">%d</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">$ %s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">$ %s</td>
-            </tr>`, item.SKU, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
+            </tr>`, item.SKU, nivelInfo, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
 	}
 
 	descuentoRow := ""
@@ -491,13 +501,19 @@ func (c *Config) SendOrderStatusNotification(order OrderData, clientEmail string
 func buildOrderStatusHTML(o OrderData) string {
 	itemsRows := ""
 	for _, item := range o.Items {
+		// Mostrar ahorro por nivel en cada item si aplica
+		nivelInfo := ""
+		if item.AhorroNivel != "" && item.AhorroNivel != "0.00" {
+			nivelInfo = fmt.Sprintf(`<br><span style="color: #e65100; font-size: 11px; font-weight: bold;">🏆 Ahorro Nivel %s: -$%s c/u</span>`, item.NivelNombre, item.AhorroNivel)
+		}
+
 		itemsRows += fmt.Sprintf(`<tr>
-              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s%s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: center;">%d</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">$ %s</td>
               <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">$ %s</td>
-            </tr>`, item.SKU, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
+            </tr>`, item.SKU, nivelInfo, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
 	}
 
 	statusColor := "#1565c0"
@@ -519,6 +535,16 @@ func buildOrderStatusHTML(o OrderData) string {
                 <div style="font-weight: bold; color: #e65100; margin-bottom: 6px;">Nota del Administrador</div>
                 <div style="color: #555; font-size: 14px; line-height: 1.5;">%s</div>
               </div>`, notasHTML)
+	}
+
+	// Fila de descuento (solo si hay descuento aplicado)
+	descuentoRow := ""
+	if o.DescuentoAplicado != "" && o.DescuentoAplicado != "0.00" {
+		descuentoRow = fmt.Sprintf(`
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #c62828;">Descuento (%s%%)</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; color: #c62828;">- $ %s</td>
+                  </tr>`, o.DescuentoPorcentaje, o.DescuentoAplicado)
 	}
 
 	return fmt.Sprintf(`<!DOCTYPE html>
@@ -616,7 +642,7 @@ func buildOrderStatusHTML(o OrderData) string {
     </tr>
   </table>
 </body>
-</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, statusBadgeBg, statusColor, o.Status, o.Guia, itemsRows, o.Subtotal, o.Iva, o.Total, notasSection)
+</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, statusBadgeBg, statusColor, o.Status, o.Guia, itemsRows, o.Subtotal, descuentoRow, o.Iva, o.Total, notasSection)
 }
 
 type PagoFacturaItemData struct {

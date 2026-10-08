@@ -231,16 +231,38 @@ func (h *PedidosHandler) notificarNuevoPedido(ctx context.Context, pedidoID int3
 	descuentoAplicado, _ := utils.NumericToFloat64(pedido.DescuentoAplicado)
 	descuentoPorcentaje, _ := utils.NumericToFloat64(pedido.DescuentoPorcentaje)
 
+	// Obtener nombre del nivel para mostrar en emails
+	nivelNombre := ""
+	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
+		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+			nivelNombre = nivel.Nombre
+		}
+	}
+
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
 		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
 		importe := precio * float64(d.Cantidad)
+
+		// Calcular ahorro por nivel para este item
+		ahorroNivel := ""
+		precioLista := ""
+		if descuentoPorcentaje > 0 && nivelNombre != "" {
+			// El precio_lista se puede obtener del variante si es necesario
+			// Por ahora, el ahorro se calcula como: precio * (descuento/100)
+			ahorroUnitario := precio * (descuentoPorcentaje / 100)
+			ahorroNivel = formatPrice(ahorroUnitario)
+		}
+
 		orderItems = append(orderItems, email.OrderItemData{
 			SKU:         d.VarianteSku.String,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    d.Cantidad,
 			Precio:      formatPrice(precio),
 			Importe:     formatPrice(importe),
+			AhorroNivel: ahorroNivel,
+			NivelNombre: nivelNombre,
+			PrecioLista: precioLista,
 		})
 	}
 
@@ -405,6 +427,16 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 	subtotal, _ := utils.NumericToFloat64(pedido.Subtotal)
 	iva, _ := utils.NumericToFloat64(pedido.Iva)
 	total, _ := utils.NumericToFloat64(pedido.TotalOrden)
+	descuentoAplicado, _ := utils.NumericToFloat64(pedido.DescuentoAplicado)
+	descuentoPorcentaje, _ := utils.NumericToFloat64(pedido.DescuentoPorcentaje)
+
+	// Obtener nombre del nivel para mostrar en emails
+	nivelNombre := ""
+	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
+		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+			nivelNombre = nivel.Nombre
+		}
+	}
 
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
@@ -414,12 +446,22 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 			cantidad = d.ShippedQuantity
 		}
 		importe := precio * float64(cantidad)
+
+		// Calcular ahorro por nivel para este item
+		ahorroNivel := ""
+		if descuentoPorcentaje > 0 && nivelNombre != "" {
+			ahorroUnitario := precio * (descuentoPorcentaje / 100)
+			ahorroNivel = formatPrice(ahorroUnitario)
+		}
+
 		orderItems = append(orderItems, email.OrderItemData{
 			SKU:         d.VarianteSku.String,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    cantidad,
 			Precio:      formatPrice(precio),
 			Importe:     formatPrice(importe),
+			AhorroNivel: ahorroNivel,
+			NivelNombre: nivelNombre,
 		})
 	}
 
@@ -428,18 +470,20 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 	}
 
 	orderData := email.OrderData{
-		Folio:       pedido.Folio,
-		Fecha:       pedido.CreatedAt.Time.Format("02/01/2006 15:04"),
-		MetodoPago:  pedido.MetodoPago,
-		Subtotal:    formatPrice(subtotal),
-		Iva:         formatPrice(iva),
-		Total:       formatPrice(total),
-		ClienteName: cliente.NombreComercial,
-		ClienteID:   pedido.ClienteID.Int32,
-		Status:      estado,
-		NotasAdmin:  notasAdmin,
-		Guia:        guia,
-		Items:       orderItems,
+		Folio:               pedido.Folio,
+		Fecha:               pedido.CreatedAt.Time.Format("02/01/2006 15:04"),
+		MetodoPago:          pedido.MetodoPago,
+		Subtotal:            formatPrice(subtotal),
+		DescuentoAplicado:   formatPrice(descuentoAplicado),
+		DescuentoPorcentaje: fmt.Sprintf("%.2f", descuentoPorcentaje),
+		Iva:                 formatPrice(iva),
+		Total:               formatPrice(total),
+		ClienteName:         cliente.NombreComercial,
+		ClienteID:           pedido.ClienteID.Int32,
+		Status:              estado,
+		NotasAdmin:          notasAdmin,
+		Guia:                guia,
+		Items:               orderItems,
 	}
 
 	h.emailCfg.SendOrderStatusNotification(orderData, usuarios[0].Email)
@@ -859,17 +903,36 @@ func (h *PedidosHandler) notificarBackorder(ctx context.Context, backorderID int
 	subtotal, _ := utils.NumericToFloat64(bo.Subtotal)
 	iva, _ := utils.NumericToFloat64(bo.Iva)
 	total, _ := utils.NumericToFloat64(bo.TotalOrden)
+	descuentoPorcentaje, _ := utils.NumericToFloat64(bo.DescuentoPorcentaje)
+
+	// Obtener nombre del nivel para mostrar en emails (del pedido origen)
+	nivelNombre := ""
+	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
+		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+			nivelNombre = nivel.Nombre
+		}
+	}
 
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
 		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
 		importe := precio * float64(d.Cantidad)
+
+		// Calcular ahorro por nivel para este item
+		ahorroNivel := ""
+		if descuentoPorcentaje > 0 && nivelNombre != "" {
+			ahorroUnitario := precio * (descuentoPorcentaje / 100)
+			ahorroNivel = formatPrice(ahorroUnitario)
+		}
+
 		orderItems = append(orderItems, email.OrderItemData{
 			SKU:         d.VarianteSku.String,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    d.Cantidad,
 			Precio:      formatPrice(precio),
 			Importe:     formatPrice(importe),
+			AhorroNivel: ahorroNivel,
+			NivelNombre: nivelNombre,
 		})
 	}
 
