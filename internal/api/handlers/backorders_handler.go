@@ -336,9 +336,10 @@ func (h *BackordersHandler) notificarNuevoBackorder(ctx context.Context, backord
 	descuentoPorcentaje, _ := utils.NumericToFloat64(backorder.DescuentoPorcentaje)
 
 	// Obtener nombre del nivel para mostrar en emails
+	// backorder.NivelRecompensaID contiene el numero_nivel (0,1,2...) no el ID PK de la tabla
 	nivelNombre := ""
 	if backorder.NivelRecompensaID.Valid && backorder.NivelRecompensaID.Int32 > 0 {
-		if nivel, err := h.queries.GetNivelRecompensa(ctx, backorder.NivelRecompensaID.Int32); err == nil {
+		if nivel, err := h.queries.GetNivelRecompensaByNumero(ctx, backorder.NivelRecompensaID.Int32); err == nil {
 			nivelNombre = nivel.Nombre
 		}
 	}

@@ -232,9 +232,10 @@ func (h *PedidosHandler) notificarNuevoPedido(ctx context.Context, pedidoID int3
 	descuentoPorcentaje, _ := utils.NumericToFloat64(pedido.DescuentoPorcentaje)
 
 	// Obtener nombre del nivel para mostrar en emails
+	// pedido.NivelRecompensaID contiene el numero_nivel (0,1,2...) no el ID PK de la tabla
 	nivelNombre := ""
 	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
-		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+		if nivel, err := h.queries.GetNivelRecompensaByNumero(ctx, pedido.NivelRecompensaID.Int32); err == nil {
 			nivelNombre = nivel.Nombre
 		}
 	}
@@ -431,9 +432,10 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 	descuentoPorcentaje, _ := utils.NumericToFloat64(pedido.DescuentoPorcentaje)
 
 	// Obtener nombre del nivel para mostrar en emails
+	// pedido.NivelRecompensaID contiene el numero_nivel (0,1,2...) no el ID PK de la tabla
 	nivelNombre := ""
 	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
-		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+		if nivel, err := h.queries.GetNivelRecompensaByNumero(ctx, pedido.NivelRecompensaID.Int32); err == nil {
 			nivelNombre = nivel.Nombre
 		}
 	}
@@ -906,9 +908,10 @@ func (h *PedidosHandler) notificarBackorder(ctx context.Context, backorderID int
 	descuentoPorcentaje, _ := utils.NumericToFloat64(bo.DescuentoPorcentaje)
 
 	// Obtener nombre del nivel para mostrar en emails (del pedido origen)
+	// pedido.NivelRecompensaID contiene el numero_nivel (0,1,2...) no el ID PK de la tabla
 	nivelNombre := ""
 	if pedido.NivelRecompensaID.Valid && pedido.NivelRecompensaID.Int32 > 0 {
-		if nivel, err := h.queries.GetNivelRecompensa(ctx, pedido.NivelRecompensaID.Int32); err == nil {
+		if nivel, err := h.queries.GetNivelRecompensaByNumero(ctx, pedido.NivelRecompensaID.Int32); err == nil {
 			nivelNombre = nivel.Nombre
 		}
 	}
