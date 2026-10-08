@@ -105,10 +105,6 @@ func (s *RecompensasService) EvaluarNiveles(ctx context.Context) {
 	}
 
 	for _, c := range clientes {
-		if c.NivelManualFijado {
-			continue
-		}
-
 		clienteID := c.ID
 
 		// Calcular total de compras en últimos 90 días

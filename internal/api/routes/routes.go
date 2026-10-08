@@ -252,7 +252,6 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			clientes.PATCH("/:id", clientesHandler.Actualizar)
 			clientes.DELETE("/:id", clientesHandler.Eliminar)
 			clientes.PATCH("/:id/saldo", clientesHandler.ActualizarSaldo)
-			clientes.PATCH("/:id/nivel-manual", clientesHandler.ActualizarNivelManualFijado)
 		}
 
 		// ===== Módulo de Parámetros y Niveles =====

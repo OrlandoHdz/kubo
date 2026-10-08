@@ -8,7 +8,6 @@
 UPDATE public.clientes
 SET
     nivel_recompensa_id = $2,
-    nivel_manual_fijado = true,
     fecha_actualizacion_nivel = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
@@ -44,7 +43,6 @@ SELECT
     c.nombre_comercial,
     c.rfc,
     c.saldo_puntos,
-    c.nivel_manual_fijado,
     c.fecha_actualizacion_nivel,
     nr.nombre AS nivel_nombre,
     nr.porcentaje_descuento AS nivel_descuento,
@@ -64,7 +62,7 @@ SET
     nivel_recompensa_id = $2,
     fecha_actualizacion_nivel = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL AND nivel_manual_fijado = false
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING id;
 
 -- ===== PARÁMETROS =====
