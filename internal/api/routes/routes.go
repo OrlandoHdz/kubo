@@ -252,6 +252,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			clientes.PATCH("/:id", clientesHandler.Actualizar)
 			clientes.DELETE("/:id", clientesHandler.Eliminar)
 			clientes.PATCH("/:id/saldo", clientesHandler.ActualizarSaldo)
+			clientes.PATCH("/:id/nivel-manual", clientesHandler.ActualizarNivelManualFijado)
 		}
 
 		// ===== Módulo de Parámetros y Niveles =====
@@ -267,6 +268,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 		}
 
 		v1.GET("/recompensas/transacciones/:cliente_id", recompensasHandler.ListarTransaccionesCliente)
+		v1.POST("/recompensas/evaluar-niveles", recompensasHandler.ForzarEvaluacionNiveles)
 		v1.GET("/recompensas/cliente/:id", recompensasHandler.GetInfoRecompensasCliente)
 		v1.PATCH("/recompensas/cliente/:id/nivel", recompensasHandler.AsignarNivelManual)
 	}

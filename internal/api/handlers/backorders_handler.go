@@ -27,14 +27,18 @@ func NewBackordersHandler(q *db.Queries, p *pgxpool.Pool, e *email.Config) *Back
 }
 
 type CrearBackorderInput struct {
-	ClienteID         int32                `json:"cliente_id" binding:"required"`
-	UsuarioID         int32                `json:"usuario_id" binding:"required"`
-	MetodoPago        string               `json:"metodo_pago" binding:"required"`
-	Subtotal          float64              `json:"subtotal" binding:"required"`
-	Iva               float64              `json:"iva" binding:"required"`
-	TotalOrden        float64              `json:"total_orden" binding:"required"`
-	Items             []PedidoDetalleInput `json:"items" binding:"required,min=1"`
-	PedidoOrigenFolio string               `json:"pedido_origen_folio"`
+	ClienteID           int32                `json:"cliente_id" binding:"required"`
+	UsuarioID           int32                `json:"usuario_id" binding:"required"`
+	MetodoPago          string               `json:"metodo_pago" binding:"required"`
+	Subtotal            float64              `json:"subtotal" binding:"required"`
+	DescuentoAplicado   float64              `json:"descuento_aplicado"`
+	DescuentoPorcentaje float64              `json:"descuento_porcentaje"`
+	Iva                 float64              `json:"iva" binding:"required"`
+	TotalOrden          float64              `json:"total_orden" binding:"required"`
+	PuntosAOtorgar      int32                `json:"puntos_a_otorgar"`
+	NivelRecompensaID   *int32               `json:"nivel_recompensa_id"`
+	Items               []PedidoDetalleInput `json:"items" binding:"required,min=1"`
+	PedidoOrigenFolio   string               `json:"pedido_origen_folio"`
 }
 
 func (h *BackordersHandler) Listar(c *gin.Context) {
@@ -168,8 +172,12 @@ func (h *BackordersHandler) Crear(c *gin.Context) {
 		EstadoBackorder:     "Pendiente",
 		MetodoPago:          input.MetodoPago,
 		Subtotal:            utils.ToNumeric(input.Subtotal),
+		DescuentoAplicado:   utils.ToNumeric(input.DescuentoAplicado),
+		DescuentoPorcentaje: utils.ToNumeric(input.DescuentoPorcentaje),
 		Iva:                 utils.ToNumeric(input.Iva),
 		TotalOrden:          utils.ToNumeric(input.TotalOrden),
+		PuntosOtorgados:     input.PuntosAOtorgar,
+		NivelRecompensaID:   pgtype.Int4{Int32: *input.NivelRecompensaID, Valid: input.NivelRecompensaID != nil && *input.NivelRecompensaID > 0},
 		GuiaBackorder:       pgtype.Text{String: "", Valid: false},
 		NotasAdminBackorder: pgtype.Text{String: "", Valid: false},
 		PedidoOrigenID:      pedidoOrigenID,

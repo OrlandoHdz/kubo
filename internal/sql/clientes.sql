@@ -17,6 +17,13 @@ INSERT INTO clientes (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 ) RETURNING *;
 
+-- name: UpdateClienteNivelManualFijado :one
+UPDATE clientes
+SET nivel_manual_fijado = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING *;
+
 -- name: ActualizarCliente :one
 -- Modifica datos generales y financieros registrando el auditor (Pág. 16)
 UPDATE clientes

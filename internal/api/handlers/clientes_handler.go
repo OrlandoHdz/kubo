@@ -129,6 +129,35 @@ func (h *ClientesHandler) Actualizar(c *gin.Context) {
 	c.JSON(http.StatusOK, cliente)
 }
 
+// ActualizarNivelManualFijado actualiza solo el campo nivel_manual_fijado
+func (h *ClientesHandler) ActualizarNivelManualFijado(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de cliente inválido"})
+		return
+	}
+
+	var input struct {
+		NivelManualFijado bool `json:"nivel_manual_fijado"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	cliente, err := h.queries.UpdateClienteNivelManualFijado(c.Request.Context(), db.UpdateClienteNivelManualFijadoParams{
+		ID:                int32(id),
+		NivelManualFijado: input.NivelManualFijado,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, cliente)
+}
+
 // Eliminar realiza un borrado lógico del cliente
 func (h *ClientesHandler) Eliminar(c *gin.Context) {
 	idStr := c.Param("id")

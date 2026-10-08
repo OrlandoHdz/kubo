@@ -28,6 +28,14 @@ type Backorder struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	// Monto del descuento aplicado por nivel de recompensa
+	DescuentoAplicado pgtype.Numeric `json:"descuento_aplicado"`
+	// Porcentaje de descuento aplicado por nivel de recompensa
+	DescuentoPorcentaje pgtype.Numeric `json:"descuento_porcentaje"`
+	// Puntos otorgados al cliente por este backorder
+	PuntosOtorgados int32 `json:"puntos_otorgados"`
+	// Nivel de recompensa del cliente al momento del backorder
+	NivelRecompensaID pgtype.Int4 `json:"nivel_recompensa_id"`
 }
 
 type BackorderDetalle struct {
@@ -312,6 +320,14 @@ type Pedido struct {
 	CreatedBy    pgtype.Int4      `json:"created_by"`
 	UpdatedBy    pgtype.Int4      `json:"updated_by"`
 	DeletedBy    pgtype.Int4      `json:"deleted_by"`
+	// Monto del descuento aplicado por nivel de recompensa
+	DescuentoAplicado pgtype.Numeric `json:"descuento_aplicado"`
+	// Porcentaje de descuento aplicado por nivel de recompensa
+	DescuentoPorcentaje pgtype.Numeric `json:"descuento_porcentaje"`
+	// Puntos otorgados al cliente por esta compra
+	PuntosOtorgados int32 `json:"puntos_otorgados"`
+	// Nivel de recompensa del cliente al momento de la compra
+	NivelRecompensaID pgtype.Int4 `json:"nivel_recompensa_id"`
 }
 
 type PedidoDetalle struct {

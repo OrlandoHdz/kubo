@@ -71,7 +71,8 @@ func (s *Scheduler) scheduleAnnualPointsReset() {
 }
 
 // HookPedidoCompletado se llama como goroutine separada después de crear un pedido.
-func HookPedidoCompletado(queries *db.Queries, clienteID int32, pedidoID int32, totalOrden float64, userID int32) {
+// Si puntosOtorgados > 0, usa ese valor en lugar de calcularlo.
+func HookPedidoCompletado(queries *db.Queries, clienteID int32, pedidoID int32, totalOrden float64, userID int32, puntosOtorgados int32) {
 	service := NewRecompensasService(queries)
-	service.AcumularPuntosPorPedido(context.Background(), clienteID, pedidoID, totalOrden, userID)
+	service.AcumularPuntosPorPedido(context.Background(), clienteID, pedidoID, totalOrden, userID, puntosOtorgados)
 }

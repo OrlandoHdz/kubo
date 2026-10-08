@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"context"
+	"log"
 	"math/big"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
 	"github.com/OrlandoHdz/kubo/internal/recompensas"
@@ -174,6 +177,19 @@ func (h *RecompensasHandler) EliminarNivel(c *gin.Context) {
 }
 
 // ===== TRANSACCIONES DE PUNTOS =====
+
+// ForzarEvaluacionNiveles ejecuta manualmente la evaluación de niveles (solo para pruebas)
+func (h *RecompensasHandler) ForzarEvaluacionNiveles(c *gin.Context) {
+	log.Println("[Recompensas] Evaluación de niveles forzada manualmente por API")
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Minute)
+	defer cancel()
+
+	h.service.EvaluarNiveles(ctx)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Evaluación de niveles ejecutada correctamente",
+	})
+}
 
 func (h *RecompensasHandler) ListarTransaccionesCliente(c *gin.Context) {
 	clienteIDStr := c.Param("cliente_id")

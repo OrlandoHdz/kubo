@@ -65,7 +65,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type ActualizarEstadoPedidoParams struct {
@@ -105,6 +105,10 @@ func (q *Queries) ActualizarEstadoPedido(ctx context.Context, arg ActualizarEsta
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -119,7 +123,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $4
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type ActualizarHasBackorderPedidoParams struct {
@@ -161,6 +165,10 @@ func (q *Queries) ActualizarHasBackorderPedido(ctx context.Context, arg Actualiz
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -174,7 +182,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $5
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type ActualizarTotalesPedidoParams struct {
@@ -214,6 +222,10 @@ func (q *Queries) ActualizarTotalesPedido(ctx context.Context, arg ActualizarTot
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -290,30 +302,38 @@ func (q *Queries) CrearModificacionPedido(ctx context.Context, arg CrearModifica
 
 const crearPedido = `-- name: CrearPedido :one
 INSERT INTO pedidos (
-    folio, 
-    cliente_id, 
-    usuario_id, 
-    estado, 
-    metodo_pago, 
-    subtotal, 
-    iva, 
-    total_orden, 
+    folio,
+    cliente_id,
+    usuario_id,
+    estado,
+    metodo_pago,
+    subtotal,
+    descuento_aplicado,
+    descuento_porcentaje,
+    iva,
+    total_orden,
+    puntos_otorgados,
+    nivel_recompensa_id,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
-) RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+) RETURNING id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type CrearPedidoParams struct {
-	Folio      string         `json:"folio"`
-	ClienteID  pgtype.Int4    `json:"cliente_id"`
-	UsuarioID  pgtype.Int4    `json:"usuario_id"`
-	Estado     string         `json:"estado"`
-	MetodoPago string         `json:"metodo_pago"`
-	Subtotal   pgtype.Numeric `json:"subtotal"`
-	Iva        pgtype.Numeric `json:"iva"`
-	TotalOrden pgtype.Numeric `json:"total_orden"`
-	CreatedBy  pgtype.Int4    `json:"created_by"`
+	Folio               string         `json:"folio"`
+	ClienteID           pgtype.Int4    `json:"cliente_id"`
+	UsuarioID           pgtype.Int4    `json:"usuario_id"`
+	Estado              string         `json:"estado"`
+	MetodoPago          string         `json:"metodo_pago"`
+	Subtotal            pgtype.Numeric `json:"subtotal"`
+	DescuentoAplicado   pgtype.Numeric `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric `json:"descuento_porcentaje"`
+	Iva                 pgtype.Numeric `json:"iva"`
+	TotalOrden          pgtype.Numeric `json:"total_orden"`
+	PuntosOtorgados     int32          `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4    `json:"nivel_recompensa_id"`
+	CreatedBy           pgtype.Int4    `json:"created_by"`
 }
 
 func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedido, error) {
@@ -324,8 +344,12 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 		arg.Estado,
 		arg.MetodoPago,
 		arg.Subtotal,
+		arg.DescuentoAplicado,
+		arg.DescuentoPorcentaje,
 		arg.Iva,
 		arg.TotalOrden,
+		arg.PuntosOtorgados,
+		arg.NivelRecompensaID,
 		arg.CreatedBy,
 	)
 	var i Pedido
@@ -349,6 +373,10 @@ func (q *Queries) CrearPedido(ctx context.Context, arg CrearPedidoParams) (Pedid
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -418,7 +446,7 @@ func (q *Queries) GetCommittedStock(ctx context.Context, varianteID pgtype.Int4)
 }
 
 const getPedido = `-- name: GetPedido :one
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -445,12 +473,16 @@ func (q *Queries) GetPedido(ctx context.Context, id int32) (Pedido, error) {
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
 
 const getPedidoByFolio = `-- name: GetPedidoByFolio :one
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE folio = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -477,6 +509,10 @@ func (q *Queries) GetPedidoByFolio(ctx context.Context, folio string) (Pedido, e
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -611,7 +647,7 @@ func (q *Queries) ListarModificacionesPorPedido(ctx context.Context, orderID pgt
 }
 
 const listarPedidos = `-- name: ListarPedidos :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -645,6 +681,10 @@ func (q *Queries) ListarPedidos(ctx context.Context) ([]Pedido, error) {
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 		); err != nil {
 			return nil, err
 		}
@@ -727,7 +767,7 @@ func (q *Queries) ListarPedidosDetalle(ctx context.Context, pedidoID pgtype.Int4
 }
 
 const listarPedidosPorCliente = `-- name: ListarPedidosPorCliente :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE cliente_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
@@ -761,6 +801,10 @@ func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 		); err != nil {
 			return nil, err
 		}
@@ -773,7 +817,7 @@ func (q *Queries) ListarPedidosPorCliente(ctx context.Context, clienteID pgtype.
 }
 
 const listarPedidosPorClienteRango = `-- name: ListarPedidosPorClienteRango :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE cliente_id = $1 AND deleted_at IS NULL
   AND created_at >= $2
   AND created_at <= $3
@@ -815,6 +859,10 @@ func (q *Queries) ListarPedidosPorClienteRango(ctx context.Context, arg ListarPe
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 		); err != nil {
 			return nil, err
 		}
@@ -827,7 +875,7 @@ func (q *Queries) ListarPedidosPorClienteRango(ctx context.Context, arg ListarPe
 }
 
 const listarPedidosPorRango = `-- name: ListarPedidosPorRango :many
-SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM pedidos
+SELECT id, folio, cliente_id, usuario_id, estado, metodo_pago, subtotal, iva, total_orden, guia, notas_admin, has_backorder, fecha_pedido, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id FROM pedidos
 WHERE deleted_at IS NULL
   AND created_at >= $1
   AND created_at <= $2
@@ -868,6 +916,10 @@ func (q *Queries) ListarPedidosPorRango(ctx context.Context, arg ListarPedidosPo
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 		); err != nil {
 			return nil, err
 		}

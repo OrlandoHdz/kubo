@@ -20,7 +20,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type ActualizarEstadoBackorderParams struct {
@@ -60,6 +60,10 @@ func (q *Queries) ActualizarEstadoBackorder(ctx context.Context, arg ActualizarE
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -72,15 +76,19 @@ INSERT INTO backorders (
     estado_backorder,
     metodo_pago,
     subtotal,
+    descuento_aplicado,
+    descuento_porcentaje,
     iva,
     total_orden,
+    puntos_otorgados,
+    nivel_recompensa_id,
     guia_backorder,
     notas_admin_backorder,
     pedido_origen_id,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+) RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type CrearBackorderParams struct {
@@ -90,8 +98,12 @@ type CrearBackorderParams struct {
 	EstadoBackorder     string         `json:"estado_backorder"`
 	MetodoPago          string         `json:"metodo_pago"`
 	Subtotal            pgtype.Numeric `json:"subtotal"`
+	DescuentoAplicado   pgtype.Numeric `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric `json:"descuento_porcentaje"`
 	Iva                 pgtype.Numeric `json:"iva"`
 	TotalOrden          pgtype.Numeric `json:"total_orden"`
+	PuntosOtorgados     int32          `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4    `json:"nivel_recompensa_id"`
 	GuiaBackorder       pgtype.Text    `json:"guia_backorder"`
 	NotasAdminBackorder pgtype.Text    `json:"notas_admin_backorder"`
 	PedidoOrigenID      pgtype.Int4    `json:"pedido_origen_id"`
@@ -106,8 +118,12 @@ func (q *Queries) CrearBackorder(ctx context.Context, arg CrearBackorderParams) 
 		arg.EstadoBackorder,
 		arg.MetodoPago,
 		arg.Subtotal,
+		arg.DescuentoAplicado,
+		arg.DescuentoPorcentaje,
 		arg.Iva,
 		arg.TotalOrden,
+		arg.PuntosOtorgados,
+		arg.NivelRecompensaID,
 		arg.GuiaBackorder,
 		arg.NotasAdminBackorder,
 		arg.PedidoOrigenID,
@@ -134,6 +150,10 @@ func (q *Queries) CrearBackorder(ctx context.Context, arg CrearBackorderParams) 
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }
@@ -186,7 +206,7 @@ func (q *Queries) CrearBackorderDetalle(ctx context.Context, arg CrearBackorderD
 }
 
 const getBackorder = `-- name: GetBackorder :one
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.id = $1 AND b.deleted_at IS NULL LIMIT 1
@@ -212,6 +232,10 @@ type GetBackorderRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -238,13 +262,17 @@ func (q *Queries) GetBackorder(ctx context.Context, id int32) (GetBackorderRow, 
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 		&i.PedidoOrigenFolio,
 	)
 	return i, err
 }
 
 const getBackorderByFolio = `-- name: GetBackorderByFolio :one
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.folio = $1 AND b.deleted_at IS NULL LIMIT 1
@@ -270,6 +298,10 @@ type GetBackorderByFolioRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -296,6 +328,10 @@ func (q *Queries) GetBackorderByFolio(ctx context.Context, folio string) (GetBac
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 		&i.PedidoOrigenFolio,
 	)
 	return i, err
@@ -371,7 +407,7 @@ func (q *Queries) GetBackorderDetalles(ctx context.Context, backorderID pgtype.I
 }
 
 const listarBackorders = `-- name: ListarBackorders :many
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.deleted_at IS NULL
@@ -398,6 +434,10 @@ type ListarBackordersRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -430,6 +470,10 @@ func (q *Queries) ListarBackorders(ctx context.Context) ([]ListarBackordersRow, 
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 			&i.PedidoOrigenFolio,
 		); err != nil {
 			return nil, err
@@ -443,7 +487,7 @@ func (q *Queries) ListarBackorders(ctx context.Context) ([]ListarBackordersRow, 
 }
 
 const listarBackordersPorCliente = `-- name: ListarBackordersPorCliente :many
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.cliente_id = $1 AND b.deleted_at IS NULL
@@ -470,6 +514,10 @@ type ListarBackordersPorClienteRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -502,6 +550,10 @@ func (q *Queries) ListarBackordersPorCliente(ctx context.Context, clienteID pgty
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 			&i.PedidoOrigenFolio,
 		); err != nil {
 			return nil, err
@@ -515,7 +567,7 @@ func (q *Queries) ListarBackordersPorCliente(ctx context.Context, clienteID pgty
 }
 
 const listarBackordersPorClienteRango = `-- name: ListarBackordersPorClienteRango :many
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.cliente_id = $1 AND b.deleted_at IS NULL
@@ -550,6 +602,10 @@ type ListarBackordersPorClienteRangoRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -582,6 +638,10 @@ func (q *Queries) ListarBackordersPorClienteRango(ctx context.Context, arg Lista
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 			&i.PedidoOrigenFolio,
 		); err != nil {
 			return nil, err
@@ -595,7 +655,7 @@ func (q *Queries) ListarBackordersPorClienteRango(ctx context.Context, arg Lista
 }
 
 const listarBackordersPorRango = `-- name: ListarBackordersPorRango :many
-SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, COALESCE(p.folio, '') AS pedido_origen_folio
+SELECT b.id, b.folio, b.cliente_id, b.usuario_id, b.estado_backorder, b.metodo_pago, b.subtotal, b.iva, b.total_orden, b.guia_backorder, b.notas_admin_backorder, b.pedido_origen_id, b.fecha_backorder, b.created_at, b.updated_at, b.deleted_at, b.created_by, b.updated_by, b.deleted_by, b.descuento_aplicado, b.descuento_porcentaje, b.puntos_otorgados, b.nivel_recompensa_id, COALESCE(p.folio, '') AS pedido_origen_folio
 FROM backorders b
 LEFT JOIN pedidos p ON b.pedido_origen_id = p.id
 WHERE b.deleted_at IS NULL
@@ -629,6 +689,10 @@ type ListarBackordersPorRangoRow struct {
 	CreatedBy           pgtype.Int4      `json:"created_by"`
 	UpdatedBy           pgtype.Int4      `json:"updated_by"`
 	DeletedBy           pgtype.Int4      `json:"deleted_by"`
+	DescuentoAplicado   pgtype.Numeric   `json:"descuento_aplicado"`
+	DescuentoPorcentaje pgtype.Numeric   `json:"descuento_porcentaje"`
+	PuntosOtorgados     int32            `json:"puntos_otorgados"`
+	NivelRecompensaID   pgtype.Int4      `json:"nivel_recompensa_id"`
 	PedidoOrigenFolio   string           `json:"pedido_origen_folio"`
 }
 
@@ -661,6 +725,10 @@ func (q *Queries) ListarBackordersPorRango(ctx context.Context, arg ListarBackor
 			&i.CreatedBy,
 			&i.UpdatedBy,
 			&i.DeletedBy,
+			&i.DescuentoAplicado,
+			&i.DescuentoPorcentaje,
+			&i.PuntosOtorgados,
+			&i.NivelRecompensaID,
 			&i.PedidoOrigenFolio,
 		); err != nil {
 			return nil, err
@@ -717,7 +785,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, folio, cliente_id, usuario_id, estado_backorder, metodo_pago, subtotal, iva, total_orden, guia_backorder, notas_admin_backorder, pedido_origen_id, fecha_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, descuento_aplicado, descuento_porcentaje, puntos_otorgados, nivel_recompensa_id
 `
 
 type SetPedidoOrigenBackorderParams struct {
@@ -749,6 +817,10 @@ func (q *Queries) SetPedidoOrigenBackorder(ctx context.Context, arg SetPedidoOri
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.DescuentoAplicado,
+		&i.DescuentoPorcentaje,
+		&i.PuntosOtorgados,
+		&i.NivelRecompensaID,
 	)
 	return i, err
 }

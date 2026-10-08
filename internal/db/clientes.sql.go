@@ -324,3 +324,46 @@ func (q *Queries) SoftDeleteCliente(ctx context.Context, arg SoftDeleteClientePa
 	_, err := q.db.Exec(ctx, softDeleteCliente, arg.ID, arg.DeletedBy)
 	return err
 }
+
+const updateClienteNivelManualFijado = `-- name: UpdateClienteNivelManualFijado :one
+UPDATE clientes
+SET nivel_manual_fijado = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, nombre_comercial, razon_social, rfc, estado, monto_minimo_compra, linea_credito_total, linea_credito_utilizada, dias_credito, permitir_pago_credito, metodo_pago_preferente, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, tiene_precio_distribuidor, nivel_recompensa_id, saldo_puntos, nivel_manual_fijado, fecha_actualizacion_nivel
+`
+
+type UpdateClienteNivelManualFijadoParams struct {
+	ID                int32 `json:"id"`
+	NivelManualFijado bool  `json:"nivel_manual_fijado"`
+}
+
+func (q *Queries) UpdateClienteNivelManualFijado(ctx context.Context, arg UpdateClienteNivelManualFijadoParams) (Cliente, error) {
+	row := q.db.QueryRow(ctx, updateClienteNivelManualFijado, arg.ID, arg.NivelManualFijado)
+	var i Cliente
+	err := row.Scan(
+		&i.ID,
+		&i.NombreComercial,
+		&i.RazonSocial,
+		&i.Rfc,
+		&i.Estado,
+		&i.MontoMinimoCompra,
+		&i.LineaCreditoTotal,
+		&i.LineaCreditoUtilizada,
+		&i.DiasCredito,
+		&i.PermitirPagoCredito,
+		&i.MetodoPagoPreferente,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+		&i.TienePrecioDistribuidor,
+		&i.NivelRecompensaID,
+		&i.SaldoPuntos,
+		&i.NivelManualFijado,
+		&i.FechaActualizacionNivel,
+	)
+	return i, err
+}

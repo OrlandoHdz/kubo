@@ -38,13 +38,17 @@ type AgregarProductosInput struct {
 }
 
 type CrearPedidoInput struct {
-	ClienteID  int32                `json:"cliente_id" binding:"required"`
-	UsuarioID  int32                `json:"usuario_id" binding:"required"`
-	MetodoPago string               `json:"metodo_pago" binding:"required"` // 'Tarjeta' o 'Crédito'
-	Subtotal   float64              `json:"subtotal" binding:"required"`
-	Iva        float64              `json:"iva" binding:"required"`
-	TotalOrden float64              `json:"total_orden" binding:"required"`
-	Items      []PedidoDetalleInput `json:"items" binding:"required,min=1"`
+	ClienteID           int32                `json:"cliente_id" binding:"required"`
+	UsuarioID           int32                `json:"usuario_id" binding:"required"`
+	MetodoPago          string               `json:"metodo_pago" binding:"required"` // 'Tarjeta' o 'Crédito'
+	Subtotal            float64              `json:"subtotal" binding:"required"`
+	DescuentoAplicado   float64              `json:"descuento_aplicado"`
+	DescuentoPorcentaje float64              `json:"descuento_porcentaje"`
+	Iva                 float64              `json:"iva" binding:"required"`
+	TotalOrden          float64              `json:"total_orden" binding:"required"`
+	PuntosAOtorgar      int32                `json:"puntos_a_otorgar"`
+	NivelRecompensaID   *int32               `json:"nivel_recompensa_id"`
+	Items               []PedidoDetalleInput `json:"items" binding:"required,min=1"`
 }
 
 func (h *PedidosHandler) validarVentanaModificacion(c *gin.Context, pedidoID int32) bool {
@@ -119,16 +123,25 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 
 	folio := fmt.Sprintf("ARW-%d", time.Now().Unix())
 
+	nivelRecompensaID := int32(0)
+	if input.NivelRecompensaID != nil && *input.NivelRecompensaID > 0 {
+		nivelRecompensaID = *input.NivelRecompensaID
+	}
+
 	pedido, err := qtx.CrearPedido(c.Request.Context(), db.CrearPedidoParams{
-		Folio:      folio,
-		ClienteID:  pgtype.Int4{Int32: input.ClienteID, Valid: true},
-		UsuarioID:  pgtype.Int4{Int32: input.UsuarioID, Valid: true},
-		Estado:     "Pendiente",
-		MetodoPago: input.MetodoPago,
-		Subtotal:   utils.ToNumeric(input.Subtotal),
-		Iva:        utils.ToNumeric(input.Iva),
-		TotalOrden: utils.ToNumeric(input.TotalOrden),
-		CreatedBy:  pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+		Folio:               folio,
+		ClienteID:           pgtype.Int4{Int32: input.ClienteID, Valid: true},
+		UsuarioID:           pgtype.Int4{Int32: input.UsuarioID, Valid: true},
+		Estado:              "Pendiente",
+		MetodoPago:          input.MetodoPago,
+		Subtotal:            utils.ToNumeric(input.Subtotal),
+		DescuentoAplicado:   utils.ToNumeric(input.DescuentoAplicado),
+		DescuentoPorcentaje: utils.ToNumeric(input.DescuentoPorcentaje),
+		Iva:                 utils.ToNumeric(input.Iva),
+		TotalOrden:          utils.ToNumeric(input.TotalOrden),
+		PuntosOtorgados:     input.PuntosAOtorgar,
+		NivelRecompensaID:   pgtype.Int4{Int32: nivelRecompensaID, Valid: nivelRecompensaID > 0},
+		CreatedBy:           pgtype.Int4{Int32: input.UsuarioID, Valid: true},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear encabezado de pedido: " + err.Error()})
@@ -170,6 +183,7 @@ func (h *PedidosHandler) Crear(c *gin.Context) {
 		pedido.ID,
 		input.TotalOrden,
 		input.UsuarioID,
+		input.PuntosAOtorgar,
 	)
 
 	c.JSON(http.StatusCreated, pedido)
@@ -214,6 +228,8 @@ func (h *PedidosHandler) notificarNuevoPedido(ctx context.Context, pedidoID int3
 	subtotal, _ := utils.NumericToFloat64(pedido.Subtotal)
 	iva, _ := utils.NumericToFloat64(pedido.Iva)
 	total, _ := utils.NumericToFloat64(pedido.TotalOrden)
+	descuentoAplicado, _ := utils.NumericToFloat64(pedido.DescuentoAplicado)
+	descuentoPorcentaje, _ := utils.NumericToFloat64(pedido.DescuentoPorcentaje)
 
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
@@ -229,15 +245,17 @@ func (h *PedidosHandler) notificarNuevoPedido(ctx context.Context, pedidoID int3
 	}
 
 	orderData := email.OrderData{
-		Folio:       pedido.Folio,
-		Fecha:       pedido.CreatedAt.Time.Format("02/01/2006 15:04"),
-		MetodoPago:  pedido.MetodoPago,
-		Subtotal:    formatPrice(subtotal),
-		Iva:         formatPrice(iva),
-		Total:       formatPrice(total),
-		ClienteName: cliente.NombreComercial,
-		ClienteID:   pedido.ClienteID.Int32,
-		Items:       orderItems,
+		Folio:               pedido.Folio,
+		Fecha:               pedido.CreatedAt.Time.Format("02/01/2006 15:04"),
+		MetodoPago:          pedido.MetodoPago,
+		Subtotal:            formatPrice(subtotal),
+		DescuentoAplicado:   formatPrice(descuentoAplicado),
+		DescuentoPorcentaje: fmt.Sprintf("%.2f", descuentoPorcentaje),
+		Iva:                 formatPrice(iva),
+		Total:               formatPrice(total),
+		ClienteName:         cliente.NombreComercial,
+		ClienteID:           pedido.ClienteID.Int32,
+		Items:               orderItems,
 	}
 
 	h.emailCfg.SendOrderNotification(orderData, usuarios[0].Email)

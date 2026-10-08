@@ -9,18 +9,20 @@ import (
 )
 
 type OrderData struct {
-	Folio       string
-	Fecha       string
-	MetodoPago  string
-	Subtotal    string
-	Iva         string
-	Total       string
-	ClienteName string
-	ClienteID   int32
-	Status      string
-	NotasAdmin  string
-	Guia        string
-	Items       []OrderItemData
+	Folio               string
+	Fecha               string
+	MetodoPago          string
+	Subtotal            string
+	DescuentoAplicado   string
+	DescuentoPorcentaje string
+	Iva                 string
+	Total               string
+	ClienteName         string
+	ClienteID           int32
+	Status              string
+	NotasAdmin          string
+	Guia                string
+	Items               []OrderItemData
 }
 
 type OrderItemData struct {
@@ -360,6 +362,15 @@ func buildOrderHTML(o OrderData) string {
             </tr>`, item.SKU, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
 	}
 
+	descuentoRow := ""
+	if o.DescuentoAplicado != "" && o.DescuentoAplicado != "0.00" {
+		descuentoRow = fmt.Sprintf(`
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #c62828;">Descuento (%s%%)</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; color: #c62828;">- $ %s</td>
+                  </tr>`, o.DescuentoPorcentaje, o.DescuentoAplicado)
+	}
+
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -413,9 +424,9 @@ func buildOrderHTML(o OrderData) string {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="3" style="padding: 10px; border-bottom: 2px solid #491212; text-align: right; font-weight: bold; color: #333;">Subtotal</td>
-                    <td colspan="2" style="padding: 10px; border-bottom: 2px solid #491212; text-align: right; color: #333;">$ %s</td>
-                  </tr>
+                    <td colspan="3" style="padding: 10px; border-bottom: 1px solid #e0e0e0; text-align: right; font-weight: bold; color: #333;">Subtotal</td>
+                    <td colspan="2" style="padding: 10px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #333;">$ %s</td>
+                  </tr>%s
                   <tr>
                     <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">IVA</td>
                     <td colspan="2" style="padding: 10px; text-align: right; color: #333;">$ %s</td>
@@ -449,7 +460,7 @@ func buildOrderHTML(o OrderData) string {
     </tr>
   </table>
 </body>
-</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, itemsRows, o.Subtotal, o.Iva, o.Total)
+</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, itemsRows, o.Subtotal, descuentoRow, o.Iva, o.Total)
 }
 
 func (c *Config) SendOrderStatusNotification(order OrderData, clientEmail string) {
@@ -570,9 +581,9 @@ func buildOrderStatusHTML(o OrderData) string {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="3" style="padding: 10px; border-bottom: 2px solid #491212; text-align: right; font-weight: bold; color: #333;">Subtotal</td>
-                    <td colspan="2" style="padding: 10px; border-bottom: 2px solid #491212; text-align: right; color: #333;">$ %s</td>
-                  </tr>
+                    <td colspan="3" style="padding: 10px; border-bottom: 1px solid #e0e0e0; text-align: right; font-weight: bold; color: #333;">Subtotal</td>
+                    <td colspan="2" style="padding: 10px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #333;">$ %s</td>
+                  </tr>%s
                   <tr>
                     <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">IVA</td>
                     <td colspan="2" style="padding: 10px; text-align: right; color: #333;">$ %s</td>

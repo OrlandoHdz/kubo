@@ -22,31 +22,41 @@ func NewRecompensasService(q *db.Queries) *RecompensasService {
 
 // AcumularPuntosPorPedido calcula y asigna puntos después de un pedido completado.
 // Se llama de forma no-bloqueante (goroutine) desde el handler de pedidos.
-func (s *RecompensasService) AcumularPuntosPorPedido(ctx context.Context, clienteID int32, pedidoID int32, totalOrden float64, userID int32) {
+// Si puntosOtorgados > 0, usa ese valor en lugar de calcularlo (viene del frontend).
+func (s *RecompensasService) AcumularPuntosPorPedido(ctx context.Context, clienteID int32, pedidoID int32, totalOrden float64, userID int32, puntosOtorgados int32) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("[Recompensas] panic en AcumularPuntosPorPedido (pedido=%d): %v", pedidoID, r)
 		}
 	}()
 
-	params, err := s.queries.GetParametrosRecompensa(ctx)
-	if err != nil {
-		log.Printf("[Recompensas] error obteniendo parámetros para pedido %d: %v", pedidoID, err)
-		return
+	var puntosGanados int32
+
+	if puntosOtorgados > 0 {
+		// Usar los puntos ya calculados por el frontend
+		puntosGanados = puntosOtorgados
+	} else {
+		// Calcular puntos según parámetros (fallback para pedidos antiguos o directos)
+		params, err := s.queries.GetParametrosRecompensa(ctx)
+		if err != nil {
+			log.Printf("[Recompensas] error obteniendo parámetros para pedido %d: %v", pedidoID, err)
+			return
+		}
+
+		montoPorPunto, _ := numericToFloat64(params.MontoCompraPorPunto)
+		if montoPorPunto <= 0 {
+			return
+		}
+
+		puntosGanados = int32(math.Floor(totalOrden / montoPorPunto))
 	}
 
-	montoPorPunto, _ := numericToFloat64(params.MontoCompraPorPunto)
-	if montoPorPunto <= 0 {
-		return
-	}
-
-	puntosGanados := int32(math.Floor(totalOrden / montoPorPunto))
 	if puntosGanados <= 0 {
 		return
 	}
 
 	// Registrar transacción
-	_, err = s.queries.CreateTransaccionPuntos(ctx, db.CreateTransaccionPuntosParams{
+	_, err := s.queries.CreateTransaccionPuntos(ctx, db.CreateTransaccionPuntosParams{
 		ClienteID: clienteID,
 		Tipo:      "ACUMULADO",
 		Puntos:    puntosGanados,

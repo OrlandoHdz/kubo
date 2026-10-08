@@ -1,16 +1,20 @@
 -- name: CrearPedido :one
 INSERT INTO pedidos (
-    folio, 
-    cliente_id, 
-    usuario_id, 
-    estado, 
-    metodo_pago, 
-    subtotal, 
-    iva, 
-    total_orden, 
+    folio,
+    cliente_id,
+    usuario_id,
+    estado,
+    metodo_pago,
+    subtotal,
+    descuento_aplicado,
+    descuento_porcentaje,
+    iva,
+    total_orden,
+    puntos_otorgados,
+    nivel_recompensa_id,
     created_by
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 ) RETURNING *;
 
 -- name: CrearPedidoDetalle :one
