@@ -38,13 +38,15 @@ WHERE folio = $1 AND deleted_at IS NULL LIMIT 1;
 
 -- name: ListarPedidosDetalle :many
 SELECT d.id, d.pedido_id, d.variante_id, d.cantidad, d.precio_unitario_aplicado, d.shipped_quantity, d.backorder_quantity, d.created_at, d.updated_at, d.deleted_at, d.created_by, d.updated_by, d.deleted_by,
-       v.sku AS variante_sku,
-       p.descripcion AS padre_descripcion,
-       p.descripcion_extendida AS padre_descripcion_extendida,
-       p.foto_url AS padre_foto_url
+       COALESCE(v.sku, vr.sku) AS variante_sku,
+       COALESCE(p.descripcion, pr.descripcion) AS padre_descripcion,
+       COALESCE(p.descripcion_extendida, pr.descripcion_extendida) AS padre_descripcion_extendida,
+       COALESCE(p.foto_url, pr.foto_url) AS padre_foto_url
 FROM pedido_detalles d
 LEFT JOIN productos_variantes v ON d.variante_id = v.id
 LEFT JOIN productos_padre p ON v.padre_id = p.id
+LEFT JOIN productos_recompensa_variantes vr ON d.variante_id = vr.id
+LEFT JOIN productos_recompensa_padre pr ON vr.padre_id = pr.id
 WHERE d.pedido_id = $1 AND d.deleted_at IS NULL;
 
 -- name: ListarPedidos :many

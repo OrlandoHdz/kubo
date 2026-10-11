@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/db"
@@ -256,7 +257,7 @@ func (h *PedidosHandler) notificarNuevoPedido(ctx context.Context, pedidoID int3
 		}
 
 		orderItems = append(orderItems, email.OrderItemData{
-			SKU:         d.VarianteSku.String,
+			SKU:         d.VarianteSku,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    d.Cantidad,
 			Precio:      formatPrice(precio),
@@ -440,6 +441,16 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 		}
 	}
 
+	isRec := pedido.MetodoPago == "Puntos" || strings.HasPrefix(pedido.Folio, "REC")
+	var puntosGastados, puntosSaldo string
+	if isRec {
+		gastados := pedido.PuntosOtorgados
+		if gastados < 0 { gastados = -gastados }
+		puntosGastados = fmt.Sprintf("%d", gastados)
+		if saldoRow, err := h.queries.GetClienteSaldoPuntos(ctx, pedido.ClienteID.Int32); err == nil {
+			puntosSaldo = fmt.Sprintf("%d", saldoRow.SaldoPuntos)
+		}
+	}
 	var orderItems []email.OrderItemData
 	for _, d := range detalles {
 		precio, _ := utils.NumericToFloat64(d.PrecioUnitarioAplicado)
@@ -448,7 +459,14 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 			cantidad = d.ShippedQuantity
 		}
 		importe := precio * float64(cantidad)
-
+		var precioStr, importeStr string
+		if isRec {
+			precioStr = fmt.Sprintf("%d", int(precio))
+			importeStr = fmt.Sprintf("%d", int(importe))
+		} else {
+			precioStr = formatPrice(precio)
+			importeStr = formatPrice(importe)
+		}
 		// Calcular ahorro por nivel para este item
 		ahorroNivel := ""
 		if descuentoPorcentaje > 0 && nivelNombre != "" {
@@ -457,11 +475,11 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 		}
 
 		orderItems = append(orderItems, email.OrderItemData{
-			SKU:         d.VarianteSku.String,
+			SKU:         d.VarianteSku,
 			Descripcion: d.PadreDescripcion.String,
 			Cantidad:    cantidad,
-			Precio:      formatPrice(precio),
-			Importe:     formatPrice(importe),
+			Precio:      precioStr,
+			Importe:     importeStr,
 			AhorroNivel: ahorroNivel,
 			NivelNombre: nivelNombre,
 		})
@@ -486,6 +504,9 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 		NotasAdmin:          notasAdmin,
 		Guia:                guia,
 		Items:               orderItems,
+		IsRecompensa:        isRec,
+		PuntosGastados:      puntosGastados,
+		PuntosSaldo:         puntosSaldo,
 	}
 
 	h.emailCfg.SendOrderStatusNotification(orderData, usuarios[0].Email)
@@ -648,7 +669,7 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": fmt.Sprintf(
 					"Cantidad inválida para el producto %s. Enviado: %d, Original: %d",
-					detalle.VarianteSku.String, item.ShippedQuantity, detalle.Cantidad,
+					detalle.VarianteSku, item.ShippedQuantity, detalle.Cantidad,
 				),
 			})
 			return
@@ -675,7 +696,7 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 		results = append(results, ShipItemResult{
 			DetalleID:        item.DetalleID,
 			Producto:         detalle.PadreDescripcion.String,
-			SKU:              detalle.VarianteSku.String,
+			SKU:              detalle.VarianteSku,
 			CantidadOriginal: detalle.Cantidad,
 			CantidadEnviada:  item.ShippedQuantity,
 			Backorder:        backorderQty,

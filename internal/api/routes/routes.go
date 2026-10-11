@@ -36,7 +36,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	estadoCuentaHandler := handlers.NewEstadoCuentaHandler(queries)
 	dashboardClienteHandler := handlers.NewDashboardClienteHandler(queries)
 	adminDashboardHandler := handlers.NewAdminDashboardHandler(queries)
-	recompensasHandler := handlers.NewRecompensasHandler(queries)
+	recompensasHandler := handlers.NewRecompensasHandlerWithPoolAndEmail(queries, pool, emailCfg)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -268,6 +268,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 
 		v1.GET("/recompensas/transacciones/:cliente_id", recompensasHandler.ListarTransaccionesCliente)
 		v1.POST("/recompensas/evaluar-niveles", recompensasHandler.ForzarEvaluacionNiveles)
+		v1.POST("/recompensas/canje", recompensasHandler.Canjear)
 		v1.GET("/recompensas/cliente/:id", recompensasHandler.GetInfoRecompensasCliente)
 		v1.PATCH("/recompensas/cliente/:id/nivel", recompensasHandler.AsignarNivelManual)
 	}

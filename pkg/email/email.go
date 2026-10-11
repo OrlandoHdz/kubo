@@ -23,6 +23,9 @@ type OrderData struct {
 	NotasAdmin          string
 	Guia                string
 	Items               []OrderItemData
+	IsRecompensa        bool
+	PuntosGastados      string
+	PuntosSaldo         string
 }
 
 type OrderItemData struct {
@@ -355,6 +358,101 @@ func buildBackorderHTML(bo BackorderData) string {
 }
 
 func buildOrderHTML(o OrderData) string {
+	if o.IsRecompensa {
+		itemsRows := ""
+		for _, item := range o.Items {
+			itemsRows += fmt.Sprintf(`<tr>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: center;">%d</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">%s pts</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">%s pts</td>
+            </tr>`, item.SKU, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
+		}
+		return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background: #f5f5f5; padding: 20px;">
+    <tr>
+      <td align="left">
+        <table width="70%%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; text-align: center;">
+              <img src="https://kubo-producto.oss-us-east-1.aliyuncs.com/logos/arsenal_logo1t.png" alt="Arsenal Welds" style="max-height: 60px; margin-bottom: 10px;">
+              <h1 style="color: #ffd54f; margin: 10px 0 0; font-size: 22px;">¡Canje de Recompensas Confirmado!</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 16px; color: #333;">Estimado cliente,</p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Hemos confirmado su canje <strong>%s</strong> con puntos.<br>
+                A continuación se detallan los artículos canjeados:
+              </p>
+
+              <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td style="padding: 8px 10px; background: #fff8e1; font-weight: bold; color: #333; border-bottom: 2px solid #ffb300;">Folio</td>
+                  <td style="padding: 8px 10px; background: #fff8e1; color: #e65100; border-bottom: 2px solid #ffb300;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Fecha</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Método</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+              </table>
+
+              <h3 style="color: #1a1a2e; margin: 20px 0 10px;">Detalle del Canje</h3>
+              <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #1a1a2e; color: #ffd54f;">
+                    <th style="padding: 10px; text-align: left;">CÓDIGO</th>
+                    <th style="padding: 10px; text-align: left;">Producto</th>
+                    <th style="padding: 10px; text-align: center;">Cant.</th>
+                    <th style="padding: 10px; text-align: right;">Puntos Unit.</th>
+                    <th style="padding: 10px; text-align: right;">Puntos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  %s
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">Puntos gastados</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold; color: #e65100;">%s pts</td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">Puntos restantes</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold; color: #2e7d32;">%s pts</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <p style="font-size: 15px; color: #555; line-height: 1.6; margin-top: 30px;">
+                Su pedido de canje se encuentra <strong style="color: #2e7d32;">CONFIRMADO</strong> y será procesado para envío. Puede dar seguimiento en la sección de Pedidos.
+              </p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Atentamente,<br>
+                <strong>Arsenal Welds</strong>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+              Arsenal Welds — ventas@arsenalwelds.com
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, itemsRows, o.PuntosGastados, o.PuntosSaldo)
+	}
 	itemsRows := ""
 	for _, item := range o.Items {
 		// Si el item tiene información de ahorro por nivel, mostrar columna adicional
@@ -499,6 +597,113 @@ func (c *Config) SendOrderStatusNotification(order OrderData, clientEmail string
 }
 
 func buildOrderStatusHTML(o OrderData) string {
+	if o.IsRecompensa {
+		itemsRows := ""
+		for _, item := range o.Items {
+			itemsRows += fmt.Sprintf(`<tr>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333;">%s</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: center;">%d</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">%s pts</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #333; text-align: right;">%s pts</td>
+            </tr>`, item.SKU, item.Descripcion, item.Cantidad, item.Precio, item.Importe)
+		}
+		statusColor := "#2e7d32"
+		statusBadgeBg := "#e8f5e9"
+		if o.Status == "Cancelado" {
+			statusColor = "#c62828"
+			statusBadgeBg = "#ffebee"
+		}
+		notasSection := ""
+		if o.NotasAdmin != "" {
+			notasHTML := strings.ReplaceAll(o.NotasAdmin, "\n", "<br>")
+			notasSection = fmt.Sprintf(`
+              <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                <div style="font-weight: bold; color: #e65100; margin-bottom: 6px;">Nota del Administrador</div>
+                <div style="color: #555; font-size: 14px; line-height: 1.5;">%s</div>
+              </div>`, notasHTML)
+		}
+		return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background: #f5f5f5; padding: 20px;">
+    <tr>
+      <td align="left">
+        <table width="70%%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 25px; text-align: center;">
+              <img src="https://kubo-producto.oss-us-east-1.aliyuncs.com/logos/arsenal_logo1t.png" alt="Arsenal Welds" style="max-height: 55px; margin-bottom: 10px;">
+              <h1 style="color: #ffd54f; margin: 10px 0 0; font-size: 22px;">Actualización de Canje</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 16px; color: #333;">Estimado cliente,</p>
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                Le informamos que su canje <strong>%s</strong> ha sido actualizado al estado:
+              </p>
+              <table width="100%%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td style="padding: 8px 10px; background: #fff8e1; font-weight: bold; color: #333; border-bottom: 2px solid #ffb300;">Folio</td>
+                  <td style="padding: 8px 10px; background: #fff8e1; color: #e65100; border-bottom: 2px solid #ffb300;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Fecha</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Método</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Estado</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0;"><span style="display: inline-block; background: %s; color: %s; padding: 4px 14px; border-radius: 4px; font-weight: bold; font-size: 14px;">%s</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; font-weight: bold; color: #333;">Guía</td>
+                  <td style="padding: 8px 10px; border-bottom: 1px solid #e0e0e0; color: #555;">%s</td>
+                </tr>
+              </table>
+              <h3 style="color: #1a1a2e; margin: 20px 0 10px;">Detalle del Canje</h3>
+              <table width="100%%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #1a1a2e; color: #ffd54f;">
+                    <th style="padding: 10px; text-align: left;">CÓDIGO</th>
+                    <th style="padding: 10px; text-align: left;">Producto</th>
+                    <th style="padding: 10px; text-align: center;">Cant.</th>
+                    <th style="padding: 10px; text-align: right;">Puntos Unit.</th>
+                    <th style="padding: 10px; text-align: right;">Puntos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  %s
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">Puntos gastados</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold; color: #e65100;">%s pts</td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold; color: #333;">Puntos restantes</td>
+                    <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold; color: #2e7d32;">%s pts</td>
+                  </tr>
+                </tfoot>
+              </table>
+              %s
+              <p style="font-size: 15px; color: #555; line-height: 1.6; margin-top: 20px;">
+                Atentamente,<br>
+                <strong>Arsenal Welds</strong>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`, o.Folio, o.Folio, o.Fecha, o.MetodoPago, statusBadgeBg, statusColor, o.Status, o.Guia, itemsRows, o.PuntosGastados, o.PuntosSaldo, notasSection)
+	}
 	itemsRows := ""
 	for _, item := range o.Items {
 		// Mostrar ahorro por nivel en cada item si aplica
