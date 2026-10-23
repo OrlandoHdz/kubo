@@ -333,7 +333,7 @@ func (h *ProductosRecompensaHandler) CrearVariante(c *gin.Context) {
 		Sku:               input.Sku,
 		Medida:            pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
 		PrecioPuntos:      input.PrecioPuntos,
-		StockActual:       input.StockActual,
+		StockActual:       0,
 		UnidadMedida:      input.UnidadMedida,
 		LeadTimeDias:      pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
 		Especificaciones:  pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},
@@ -384,13 +384,16 @@ func (h *ProductosRecompensaHandler) ActualizarVariante(c *gin.Context) {
 		return
 	}
 
+	// Stock gestionado solo vía Ajustes de Inventario, mantener valor actual
+	existingVar, _ := h.queries.GetVarianteRecompensa(c.Request.Context(), int32(id))
+	stockActual := existingVar.StockActual
 	variante, err := h.queries.ActualizarVarianteRecompensa(c.Request.Context(), db.ActualizarVarianteRecompensaParams{
 		ID:                int32(id),
 		PadreID:           input.PadreID,
 		Sku:               input.Sku,
 		Medida:            pgtype.Text{String: input.Medida, Valid: input.Medida != ""},
 		PrecioPuntos:      input.PrecioPuntos,
-		StockActual:       input.StockActual,
+		StockActual:       stockActual,
 		UnidadMedida:      input.UnidadMedida,
 		LeadTimeDias:      pgtype.Int4{Int32: input.LeadTimeDias, Valid: input.LeadTimeDias != 0},
 		Especificaciones:  pgtype.Text{String: input.Especificaciones, Valid: input.Especificaciones != ""},

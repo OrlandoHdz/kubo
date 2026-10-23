@@ -8,6 +8,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AjustesInventarioRecompensa struct {
+	ID            int32            `json:"id"`
+	VarianteID    int32            `json:"variante_id"`
+	Tipo          string           `json:"tipo"`
+	Cantidad      int32            `json:"cantidad"`
+	Comentario    string           `json:"comentario"`
+	StockAnterior int32            `json:"stock_anterior"`
+	StockNuevo    int32            `json:"stock_nuevo"`
+	UsuarioID     pgtype.Int4      `json:"usuario_id"`
+	UsuarioNombre pgtype.Text      `json:"usuario_nombre"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
 type Backorder struct {
 	ID                  int32            `json:"id"`
 	Folio               string           `json:"folio"`

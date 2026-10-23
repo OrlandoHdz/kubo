@@ -37,6 +37,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	dashboardClienteHandler := handlers.NewDashboardClienteHandler(queries)
 	adminDashboardHandler := handlers.NewAdminDashboardHandler(queries)
 	recompensasHandler := handlers.NewRecompensasHandlerWithPoolAndEmail(queries, pool, emailCfg)
+	ajustesInventarioHandler := handlers.NewAjustesInventarioHandler(queries, pool)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -271,5 +272,13 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 		v1.POST("/recompensas/canje", recompensasHandler.Canjear)
 		v1.GET("/recompensas/cliente/:id", recompensasHandler.GetInfoRecompensasCliente)
 		v1.PATCH("/recompensas/cliente/:id/nivel", recompensasHandler.AsignarNivelManual)
+
+		// Ajustes de Inventario Recompensa
+		ajustes := v1.Group("/recompensas/ajustes")
+		{
+			ajustes.POST("", ajustesInventarioHandler.CrearAjuste)
+			ajustes.GET("", ajustesInventarioHandler.ListarAjustes)
+			ajustes.GET("/variantes", ajustesInventarioHandler.ListarVariantes)
+		}
 	}
 }
