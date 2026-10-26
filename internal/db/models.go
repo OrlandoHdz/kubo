@@ -5,6 +5,8 @@
 package db
 
 import (
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -64,6 +66,188 @@ type BackorderDetalle struct {
 	CreatedBy              pgtype.Int4      `json:"created_by"`
 	UpdatedBy              pgtype.Int4      `json:"updated_by"`
 	DeletedBy              pgtype.Int4      `json:"deleted_by"`
+}
+
+type ChatBackorder struct {
+	ID                int32       `json:"id"`
+	Folio             string      `json:"folio"`
+	ClienteID         pgtype.Int4 `json:"cliente_id"`
+	EstadoBackorder   string      `json:"estado_backorder"`
+	FechaBackorder    string      `json:"fecha_backorder"`
+	TotalOrden        float64     `json:"total_orden"`
+	GuiaBackorder     string      `json:"guia_backorder"`
+	PedidoOrigenFolio string      `json:"pedido_origen_folio"`
+}
+
+type ChatBackorderItem struct {
+	ID                     int32       `json:"id"`
+	BackorderID            pgtype.Int4 `json:"backorder_id"`
+	ClienteID              pgtype.Int4 `json:"cliente_id"`
+	Sku                    string      `json:"sku"`
+	Nombre                 string      `json:"nombre"`
+	Cantidad               int32       `json:"cantidad"`
+	PrecioUnitarioAplicado float64     `json:"precio_unitario_aplicado"`
+	Disponible             bool        `json:"disponible"`
+}
+
+// Conversaciones del chat; append-only para el rol de auditoría.
+type ChatConversation struct {
+	ID        string           `json:"id"`
+	UsuarioID pgtype.Int4      `json:"usuario_id"`
+	ClienteID pgtype.Int4      `json:"cliente_id"`
+	Canal     string           `json:"canal"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+type ChatDevolucione struct {
+	ID                 int32       `json:"id"`
+	Folio              string      `json:"folio"`
+	ClienteID          pgtype.Int4 `json:"cliente_id"`
+	PedidoFolio        string      `json:"pedido_folio"`
+	Tipo               string      `json:"tipo"`
+	NumerosParte       string      `json:"numeros_parte"`
+	Cantidades         string      `json:"cantidades"`
+	Estatus            string      `json:"estatus"`
+	FechaCreacion      string      `json:"fecha_creacion"`
+	FechaActualizacion string      `json:"fecha_actualizacion"`
+}
+
+// Solicitudes de atención humana; sustituye un UPDATE sobre la conversación.
+type ChatEscalation struct {
+	ID             int64            `json:"id"`
+	ConversationID string           `json:"conversation_id"`
+	UsuarioID      pgtype.Int4      `json:"usuario_id"`
+	Motivo         string           `json:"motivo"`
+	Estado         string           `json:"estado"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	// Nombre proporcionado por el usuario en el formulario de asesor.
+	ContactoNombre string `json:"contacto_nombre"`
+	// Correo de contacto para seguimiento; puede ser el de la sesión o el del formulario.
+	ContactoEmail string `json:"contacto_email"`
+	// Teléfono de contacto opcional.
+	ContactoTelefono string `json:"contacto_telefono"`
+	// Nota interna de seguimiento; no se muestra al cliente.
+	NotaAdmin string `json:"nota_admin"`
+	// Usuario interno que atendió o cerró la solicitud.
+	AtendidaPor pgtype.Int4      `json:"atendida_por"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
+// Mensajes y tool calls del chat; tokens de entrada/salida por turno.
+type ChatMessage struct {
+	ID             int64            `json:"id"`
+	ConversationID string           `json:"conversation_id"`
+	UsuarioID      pgtype.Int4      `json:"usuario_id"`
+	Role           string           `json:"role"`
+	Content        string           `json:"content"`
+	ToolCalls      []byte           `json:"tool_calls"`
+	InputTokens    int32            `json:"input_tokens"`
+	OutputTokens   int32            `json:"output_tokens"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
+type ChatNivelesRecompensa struct {
+	ID                       int32   `json:"id"`
+	Nombre                   string  `json:"nombre"`
+	NumeroNivel              int32   `json:"numero_nivel"`
+	PromedioCompraTrimestral float64 `json:"promedio_compra_trimestral"`
+	PorcentajeDescuento      float64 `json:"porcentaje_descuento"`
+}
+
+type ChatParametrosRecompensa struct {
+	MontoCompraPorPunto float64 `json:"monto_compra_por_punto"`
+	ValorPuntoPesos     float64 `json:"valor_punto_pesos"`
+}
+
+// Pedidos visibles para el chat; el filtro por cliente se aplica en cada consulta.
+type ChatPedido struct {
+	ID                   int32       `json:"id"`
+	Folio                string      `json:"folio"`
+	ClienteID            pgtype.Int4 `json:"cliente_id"`
+	Estado               string      `json:"estado"`
+	FechaPedido          string      `json:"fecha_pedido"`
+	TotalOrden           float64     `json:"total_orden"`
+	Guia                 string      `json:"guia"`
+	Paqueteria           string      `json:"paqueteria"`
+	FechaEntregaEstimada string      `json:"fecha_entrega_estimada"`
+	HasBackorder         bool        `json:"has_backorder"`
+}
+
+// Partidas de pedido para el chat; no expone costos ni auditoría interna.
+type ChatPedidoItem struct {
+	ID                     int32       `json:"id"`
+	PedidoID               pgtype.Int4 `json:"pedido_id"`
+	PedidoFolio            string      `json:"pedido_folio"`
+	ClienteID              pgtype.Int4 `json:"cliente_id"`
+	Sku                    string      `json:"sku"`
+	Nombre                 string      `json:"nombre"`
+	Cantidad               int32       `json:"cantidad"`
+	PrecioUnitarioAplicado float64     `json:"precio_unitario_aplicado"`
+	ShippedQuantity        int32       `json:"shipped_quantity"`
+	BackorderQuantity      int32       `json:"backorder_quantity"`
+}
+
+// Catálogo de solo lectura para el chat; no expone costos ni datos internos.
+type ChatProducto struct {
+	ID                 int32           `json:"id"`
+	PadreID            int32           `json:"padre_id"`
+	Sku                string          `json:"sku"`
+	Nombre             string          `json:"nombre"`
+	Descripcion        string          `json:"descripcion"`
+	DescripcionCorta   string          `json:"descripcion_corta"`
+	FichaTecnica       string          `json:"ficha_tecnica"`
+	ImagenUrl          string          `json:"imagen_url"`
+	PrecioLista        float64         `json:"precio_lista"`
+	PrecioDistribuidor float64         `json:"precio_distribuidor"`
+	PrecioPublico      float64         `json:"precio_publico"`
+	Proceso            string          `json:"proceso"`
+	Atributos          json.RawMessage `json:"atributos"`
+	Especificaciones   string          `json:"especificaciones"`
+	Medida             string          `json:"medida"`
+	UnidadMedida       string          `json:"unidad_medida"`
+	Marca              string          `json:"marca"`
+	Categoria          string          `json:"categoria"`
+	Subgrupo           string          `json:"subgrupo"`
+	Modelo             string          `json:"modelo"`
+	Tipo               string          `json:"tipo"`
+	Multiplos          int32           `json:"multiplos"`
+	LeadTimeDias       int32           `json:"lead_time_dias"`
+	PermitirBackorder  bool            `json:"permitir_backorder"`
+	Stock              float64         `json:"stock"`
+	EnStock            bool            `json:"en_stock"`
+	Documento          interface{}     `json:"documento"`
+}
+
+type ChatRecompensasCliente struct {
+	ClienteID               int32       `json:"cliente_id"`
+	SaldoPuntos             int32       `json:"saldo_puntos"`
+	NivelManualFijado       bool        `json:"nivel_manual_fijado"`
+	FechaActualizacionNivel string      `json:"fecha_actualizacion_nivel"`
+	NivelID                 pgtype.Int4 `json:"nivel_id"`
+	NivelNombre             string      `json:"nivel_nombre"`
+	NivelNumero             int32       `json:"nivel_numero"`
+	NivelPromedioTrimestral float64     `json:"nivel_promedio_trimestral"`
+	NivelDescuento          float64     `json:"nivel_descuento"`
+	Compra90dias            float64     `json:"compra_90dias"`
+	PromedioTrimestral      float64     `json:"promedio_trimestral"`
+	MontoCompraPorPunto     float64     `json:"monto_compra_por_punto"`
+	ValorPuntoPesos         float64     `json:"valor_punto_pesos"`
+}
+
+type ChatTransaccionesPunto struct {
+	ID          int32  `json:"id"`
+	ClienteID   int32  `json:"cliente_id"`
+	Tipo        string `json:"tipo"`
+	Puntos      int32  `json:"puntos"`
+	Fecha       string `json:"fecha"`
+	PedidoFolio string `json:"pedido_folio"`
+}
+
+// Mapeo mínimo usuario -> cliente para resolver la sesión sin exponer PII.
+type ChatUsuariosCliente struct {
+	UsuarioID               int32       `json:"usuario_id"`
+	ClienteID               pgtype.Int4 `json:"cliente_id"`
+	TienePrecioDistribuidor bool        `json:"tiene_precio_distribuidor"`
 }
 
 type Cliente struct {
@@ -341,6 +525,10 @@ type Pedido struct {
 	PuntosOtorgados int32 `json:"puntos_otorgados"`
 	// Nivel de recompensa del cliente al momento de la compra
 	NivelRecompensaID pgtype.Int4 `json:"nivel_recompensa_id"`
+	// Paquetería utilizada para el envío; editable por administración.
+	Paqueteria pgtype.Text `json:"paqueteria"`
+	// Fecha estimada de entrega mostrada al cliente en el chat.
+	FechaEntregaEstimada pgtype.Timestamp `json:"fecha_entrega_estimada"`
 }
 
 type PedidoDetalle struct {
@@ -366,6 +554,17 @@ type Permiso struct {
 	Grupo     string           `json:"grupo"`
 	Orden     int32            `json:"orden"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+// Índice de búsqueda desnormalizado para el chat; se mantiene por triggers.
+type ProductosBusqueda struct {
+	VarianteID     int32       `json:"variante_id"`
+	Nombre         string      `json:"nombre"`
+	Descripcion    string      `json:"descripcion"`
+	Sku            string      `json:"sku"`
+	AtributosTexto string      `json:"atributos_texto"`
+	Proceso        pgtype.Text `json:"proceso"`
+	Documento      interface{} `json:"documento"`
 }
 
 type ProductosIntegracion struct {
@@ -480,6 +679,8 @@ type ProductosVariante struct {
 	CreatedBy          pgtype.Int4      `json:"created_by"`
 	UpdatedBy          pgtype.Int4      `json:"updated_by"`
 	DeletedBy          pgtype.Int4      `json:"deleted_by"`
+	Proceso            pgtype.Text      `json:"proceso"`
+	Atributos          json.RawMessage  `json:"atributos"`
 }
 
 type SolicitudRegistroNuevoCliente struct {

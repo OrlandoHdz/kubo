@@ -277,9 +277,9 @@ func (h *BackordersHandler) MarcarDetalleDisponible(c *gin.Context) {
 	}
 
 	detalleActualizado, err := h.queries.MarcarDisponibleBackorderDetalle(c.Request.Context(), db.MarcarDisponibleBackorderDetalleParams{
-		ID:            int32(detalleID),
-		BackorderID:   pgtype.Int4{Int32: int32(id), Valid: true},
-		UpdatedBy:     pgtype.Int4{Int32: usuarioID, Valid: usuarioID != 0},
+		ID:          int32(detalleID),
+		BackorderID: pgtype.Int4{Int32: int32(id), Valid: true},
+		UpdatedBy:   pgtype.Int4{Int32: usuarioID, Valid: usuarioID != 0},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al marcar detalle como disponible: " + err.Error()})
@@ -604,9 +604,9 @@ func (h *BackordersHandler) ConvertirAPedido(c *gin.Context) {
 	}
 
 	_, err = qtx.SetPedidoOrigenBackorder(c.Request.Context(), db.SetPedidoOrigenBackorderParams{
-		ID:        backorder.ID,
+		ID:             backorder.ID,
 		PedidoOrigenID: pgtype.Int4{Int32: pedido.ID, Valid: true},
-		UpdatedBy: pgtype.Int4{Int32: usuarioID, Valid: usuarioID != 0},
+		UpdatedBy:      pgtype.Int4{Int32: usuarioID, Valid: usuarioID != 0},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar backorder con pedido origen: " + err.Error()})
@@ -619,7 +619,7 @@ func (h *BackordersHandler) ConvertirAPedido(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Backorder convertido a pedido exitosamente",
-		"pedido":   pedido,
+		"message": "Backorder convertido a pedido exitosamente",
+		"pedido":  pedido,
 	})
 }

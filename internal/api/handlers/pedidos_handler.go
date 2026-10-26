@@ -358,10 +358,10 @@ func (h *PedidosHandler) ActualizarEstado(c *gin.Context) {
 	}
 
 	var input struct {
-		Estado      string `json:"estado" binding:"required"`
-		Guia        string `json:"guia"`
-		NotasAdmin  string `json:"notas_admin"`
-		UpdatedBy   int32  `json:"updated_by"`
+		Estado     string `json:"estado" binding:"required"`
+		Guia       string `json:"guia"`
+		NotasAdmin string `json:"notas_admin"`
+		UpdatedBy  int32  `json:"updated_by"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -445,7 +445,9 @@ func (h *PedidosHandler) notificarEstadoPedido(ctx context.Context, pedidoID int
 	var puntosGastados, puntosSaldo string
 	if isRec {
 		gastados := pedido.PuntosOtorgados
-		if gastados < 0 { gastados = -gastados }
+		if gastados < 0 {
+			gastados = -gastados
+		}
 		puntosGastados = fmt.Sprintf("%d", gastados)
 		if saldoRow, err := h.queries.GetClienteSaldoPuntos(ctx, pedido.ClienteID.Int32); err == nil {
 			puntosSaldo = fmt.Sprintf("%d", saldoRow.SaldoPuntos)
@@ -585,18 +587,18 @@ type ShipItemInput struct {
 }
 
 type ShipOrderInput struct {
-	Items     []ShipItemInput `json:"items" binding:"required,min=1"`
-	Guia      string          `json:"guia"`
-	NotasAdmin string         `json:"notas_admin"`
+	Items      []ShipItemInput `json:"items" binding:"required,min=1"`
+	Guia       string          `json:"guia"`
+	NotasAdmin string          `json:"notas_admin"`
 }
 
 type ShipItemResult struct {
-	DetalleID         int32  `json:"detalle_id"`
-	Producto          string `json:"producto"`
-	SKU               string `json:"sku"`
-	CantidadOriginal  int32  `json:"cantidad_original"`
-	CantidadEnviada   int32  `json:"cantidad_enviada"`
-	Backorder         int32  `json:"backorder"`
+	DetalleID        int32  `json:"detalle_id"`
+	Producto         string `json:"producto"`
+	SKU              string `json:"sku"`
+	CantidadOriginal int32  `json:"cantidad_original"`
+	CantidadEnviada  int32  `json:"cantidad_enviada"`
+	Backorder        int32  `json:"backorder"`
 }
 
 func (h *PedidosHandler) ShipOrder(c *gin.Context) {
@@ -812,12 +814,12 @@ func (h *PedidosHandler) ShipOrder(c *gin.Context) {
 	}
 
 	resumen := gin.H{
-		"message":      "Envío registrado exitosamente",
-		"pedido_id":    id,
-		"folio":        pedido.Folio,
-		"estado":       nuevoEstado,
+		"message":       "Envío registrado exitosamente",
+		"pedido_id":     id,
+		"folio":         pedido.Folio,
+		"estado":        nuevoEstado,
 		"has_backorder": hasBackorder,
-		"items":        results,
+		"items":         results,
 	}
 
 	c.JSON(http.StatusOK, resumen)

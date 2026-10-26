@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"time"
 
 	"github.com/OrlandoHdz/kubo/internal/api/routes"
+	"github.com/OrlandoHdz/kubo/internal/chat"
 	"github.com/OrlandoHdz/kubo/internal/database"
 	"github.com/OrlandoHdz/kubo/internal/db"
 	"github.com/OrlandoHdz/kubo/internal/recompensas"
@@ -27,6 +29,32 @@ func main() {
 	defer pool.Close()
 	queries := db.New(pool)
 
+	// 1.1 Cargar configuración de correo (se usa para notificaciones del chat
+	// y para las notificaciones existentes de la tienda).
+	emailCfg := &email.Config{}
+	if data, err := os.ReadFile("configs/cloud/email.yaml"); err == nil {
+		if err := yaml.Unmarshal(data, emailCfg); err != nil {
+			log.Printf("Error parseando config email: %v (correo deshabilitado)", err)
+			emailCfg = nil
+		}
+	} else {
+		log.Printf("Archivo email.yaml no encontrado: %v (correo deshabilitado)", err)
+		emailCfg = nil
+	}
+
+	// 1.2 Chat inteligente (opcional: si falta configuración, la tienda sigue funcionando)
+	chatHandler, err := chat.NewFromEnv(ctx, emailCfg)
+	if err != nil {
+		if errors.Is(err, chat.ErrDisabled) {
+			log.Printf("Chat deshabilitado: %v", err)
+		} else {
+			log.Printf("Chat no disponible: %v", err)
+		}
+		chatHandler = nil
+	} else {
+		defer chatHandler.Close()
+	}
+
 	// 2. Setup Server
 	r := gin.Default()
 	r.MaxMultipartMemory = 100 << 20 // 100 MB
@@ -46,20 +74,8 @@ func main() {
 		log.Fatalf("Error cargando config OSS: %v", err)
 	}
 
-	// 4. Cargar Config Email
-	emailCfg := &email.Config{}
-	if data, err := os.ReadFile("configs/cloud/email.yaml"); err == nil {
-		if err := yaml.Unmarshal(data, emailCfg); err != nil {
-			log.Printf("Error parseando config email: %v (correo deshabilitado)", err)
-			emailCfg = nil
-		}
-	} else {
-		log.Printf("Archivo email.yaml no encontrado: %v (correo deshabilitado)", err)
-		emailCfg = nil
-	}
-
-	// 5. Cargar Rutas
-	routes.SetupRoutes(r, queries, pool, ossCfg, emailCfg)
+	// 4. Cargar Rutas
+	routes.SetupRoutes(r, queries, pool, ossCfg, emailCfg, chatHandler)
 
 	// 6. Iniciar scheduler de recompensas (cron jobs en background)
 	recompensasService := recompensas.NewRecompensasService(queries)

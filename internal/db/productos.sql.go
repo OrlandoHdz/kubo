@@ -139,7 +139,7 @@ SET
     updated_at = CURRENT_TIMESTAMP,
     updated_by = $19
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+RETURNING id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, proceso, atributos
 `
 
 type ActualizarVarianteParams struct {
@@ -212,6 +212,8 @@ func (q *Queries) ActualizarVariante(ctx context.Context, arg ActualizarVariante
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.Proceso,
+		&i.Atributos,
 	)
 	return i, err
 }
@@ -318,7 +320,7 @@ padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico,
     categoria, subgrupo, modelo, tipo, marca, multiplos, permitir_backorder, created_by
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-) RETURNING id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by
+) RETURNING id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, proceso, atributos
 `
 
 type CrearVarianteParams struct {
@@ -393,6 +395,8 @@ func (q *Queries) CrearVariante(ctx context.Context, arg CrearVarianteParams) (P
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.Proceso,
+		&i.Atributos,
 	)
 	return i, err
 }
@@ -555,7 +559,7 @@ func (q *Queries) GetStockRealVariante(ctx context.Context, id int32) (pgtype.Nu
 }
 
 const getVariante = `-- name: GetVariante :one
-SELECT id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM productos_variantes 
+SELECT id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, proceso, atributos FROM productos_variantes 
 WHERE id = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -587,12 +591,14 @@ func (q *Queries) GetVariante(ctx context.Context, id int32) (ProductosVariante,
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.Proceso,
+		&i.Atributos,
 	)
 	return i, err
 }
 
 const getVarianteBySKU = `-- name: GetVarianteBySKU :one
-SELECT id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM productos_variantes 
+SELECT id, padre_id, sku, medida, precio_distribuidor, precio_lista, precio_publico, stock_actual, unidad_medida, lead_time_dias, especificaciones, multiplos, categoria, subgrupo, modelo, tipo, marca, permitir_backorder, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by, proceso, atributos FROM productos_variantes 
 WHERE sku = $1 AND deleted_at IS NULL LIMIT 1
 `
 
@@ -624,6 +630,8 @@ func (q *Queries) GetVarianteBySKU(ctx context.Context, sku string) (ProductosVa
 		&i.CreatedBy,
 		&i.UpdatedBy,
 		&i.DeletedBy,
+		&i.Proceso,
+		&i.Atributos,
 	)
 	return i, err
 }

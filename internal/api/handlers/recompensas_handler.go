@@ -103,8 +103,8 @@ func (h *RecompensasHandler) ListarNiveles(c *gin.Context) {
 
 func (h *RecompensasHandler) CrearNivel(c *gin.Context) {
 	var input struct {
-		Nombre                   string `json:"nombre" binding:"required"`
-		NumeroNivel              *int32 `json:"numero_nivel"`
+		Nombre                   string  `json:"nombre" binding:"required"`
+		NumeroNivel              *int32  `json:"numero_nivel"`
 		PromedioCompraTrimestral float64 `json:"promedio_compra_trimestral"`
 		PorcentajeDescuento      float64 `json:"porcentaje_descuento"`
 		ImagenInsigniaURL        string  `json:"imagen_insignia_url"`
@@ -143,8 +143,8 @@ func (h *RecompensasHandler) ActualizarNivel(c *gin.Context) {
 	}
 
 	var input struct {
-		Nombre                   string `json:"nombre" binding:"required"`
-		NumeroNivel              *int32 `json:"numero_nivel"`
+		Nombre                   string  `json:"nombre" binding:"required"`
+		NumeroNivel              *int32  `json:"numero_nivel"`
 		PromedioCompraTrimestral float64 `json:"promedio_compra_trimestral"`
 		PorcentajeDescuento      float64 `json:"porcentaje_descuento"`
 		ImagenInsigniaURL        string  `json:"imagen_insignia_url"`
@@ -281,7 +281,7 @@ func (h *RecompensasHandler) Canjear(c *gin.Context) {
 	var input struct {
 		ClienteID int32 `json:"cliente_id" binding:"required"`
 		UsuarioID int32 `json:"usuario_id" binding:"required"`
-		Items []struct {
+		Items     []struct {
 			VarianteID int32 `json:"variante_id" binding:"required"`
 			Cantidad   int32 `json:"cantidad" binding:"required"`
 		} `json:"items" binding:"required,min=1"`

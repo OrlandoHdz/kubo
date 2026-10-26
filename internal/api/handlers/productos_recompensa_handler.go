@@ -50,7 +50,7 @@ func (h *ProductosRecompensaHandler) ObtenerPadre(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"padre":    padre,
+		"padre":     padre,
 		"variantes": []db.ProductosRecompensaVariante{},
 	})
 }
@@ -80,13 +80,27 @@ func (h *ProductosRecompensaHandler) CrearPadre(c *gin.Context) {
 	for i, fieldName := range []string{"foto", "foto2", "foto3", "foto4", "foto5", "foto6", "foto7", "foto8"} {
 		file, err := c.FormFile(fieldName)
 		urlVar := &fotoUrl
-		if i == 1 { urlVar = &fotoUrl2 }
-		if i == 2 { urlVar = &fotoUrl3 }
-		if i == 3 { urlVar = &fotoUrl4 }
-		if i == 4 { urlVar = &fotoUrl5 }
-		if i == 5 { urlVar = &fotoUrl6 }
-		if i == 6 { urlVar = &fotoUrl7 }
-		if i == 7 { urlVar = &fotoUrl8 }
+		if i == 1 {
+			urlVar = &fotoUrl2
+		}
+		if i == 2 {
+			urlVar = &fotoUrl3
+		}
+		if i == 3 {
+			urlVar = &fotoUrl4
+		}
+		if i == 4 {
+			urlVar = &fotoUrl5
+		}
+		if i == 5 {
+			urlVar = &fotoUrl6
+		}
+		if i == 6 {
+			urlVar = &fotoUrl7
+		}
+		if i == 7 {
+			urlVar = &fotoUrl8
+		}
 
 		if err == nil {
 			if h.ossCfg != nil {
@@ -118,20 +132,20 @@ func (h *ProductosRecompensaHandler) CrearPadre(c *gin.Context) {
 	}
 
 	padre, err := h.queries.CrearProductoRecompensaPadre(c.Request.Context(), db.CrearProductoRecompensaPadreParams{
-		CveProdIntegracion:  pgtype.Text{String: cveProd, Valid: cveProd != ""},
-		Descripcion:         pgtype.Text{String: descripcion, Valid: descripcion != ""},
-		Titulo:              pgtype.Text{String: titulo, Valid: titulo != ""},
+		CveProdIntegracion:   pgtype.Text{String: cveProd, Valid: cveProd != ""},
+		Descripcion:          pgtype.Text{String: descripcion, Valid: descripcion != ""},
+		Titulo:               pgtype.Text{String: titulo, Valid: titulo != ""},
 		DescripcionExtendida: pgtype.Text{String: descripcionExtendida, Valid: descripcionExtendida != ""},
-		FotoUrl:             pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
-		FotoUrl2:            pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
-		FotoUrl3:            pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
-		FotoUrl4:            pgtype.Text{String: fotoUrl4, Valid: fotoUrl4 != ""},
-		FotoUrl5:            pgtype.Text{String: fotoUrl5, Valid: fotoUrl5 != ""},
-		FotoUrl6:            pgtype.Text{String: fotoUrl6, Valid: fotoUrl6 != ""},
-		FotoUrl7:            pgtype.Text{String: fotoUrl7, Valid: fotoUrl7 != ""},
-		FotoUrl8:            pgtype.Text{String: fotoUrl8, Valid: fotoUrl8 != ""},
-		FichaTecnica:        pgtype.Text{String: fichaUrl, Valid: fichaUrl != ""},
-		CreatedBy:           pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
+		FotoUrl:              pgtype.Text{String: fotoUrl, Valid: fotoUrl != ""},
+		FotoUrl2:             pgtype.Text{String: fotoUrl2, Valid: fotoUrl2 != ""},
+		FotoUrl3:             pgtype.Text{String: fotoUrl3, Valid: fotoUrl3 != ""},
+		FotoUrl4:             pgtype.Text{String: fotoUrl4, Valid: fotoUrl4 != ""},
+		FotoUrl5:             pgtype.Text{String: fotoUrl5, Valid: fotoUrl5 != ""},
+		FotoUrl6:             pgtype.Text{String: fotoUrl6, Valid: fotoUrl6 != ""},
+		FotoUrl7:             pgtype.Text{String: fotoUrl7, Valid: fotoUrl7 != ""},
+		FotoUrl8:             pgtype.Text{String: fotoUrl8, Valid: fotoUrl8 != ""},
+		FichaTecnica:         pgtype.Text{String: fichaUrl, Valid: fichaUrl != ""},
+		CreatedBy:            pgtype.Int4{Int32: createdBy, Valid: createdBy != 0},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear producto padre: " + err.Error()})
@@ -190,13 +204,27 @@ func (h *ProductosRecompensaHandler) ActualizarPadre(c *gin.Context) {
 	for i, fieldName := range []string{"foto", "foto2", "foto3", "foto4", "foto5", "foto6", "foto7", "foto8"} {
 		file, err := c.FormFile(fieldName)
 		urlVar := &fotoUrl
-		if i == 1 { urlVar = &fotoUrl2 }
-		if i == 2 { urlVar = &fotoUrl3 }
-		if i == 3 { urlVar = &fotoUrl4 }
-		if i == 4 { urlVar = &fotoUrl5 }
-		if i == 5 { urlVar = &fotoUrl6 }
-		if i == 6 { urlVar = &fotoUrl7 }
-		if i == 7 { urlVar = &fotoUrl8 }
+		if i == 1 {
+			urlVar = &fotoUrl2
+		}
+		if i == 2 {
+			urlVar = &fotoUrl3
+		}
+		if i == 3 {
+			urlVar = &fotoUrl4
+		}
+		if i == 4 {
+			urlVar = &fotoUrl5
+		}
+		if i == 5 {
+			urlVar = &fotoUrl6
+		}
+		if i == 6 {
+			urlVar = &fotoUrl7
+		}
+		if i == 7 {
+			urlVar = &fotoUrl8
+		}
 
 		if err == nil {
 			if h.ossCfg != nil {
@@ -304,21 +332,21 @@ func (h *ProductosRecompensaHandler) CrearVariante(c *gin.Context) {
 	}
 
 	var input struct {
-		Sku              string  `json:"sku" binding:"required"`
-		Medida           string  `json:"medida"`
-		PrecioPuntos     int32   `json:"precio_puntos" binding:"required"`
-		StockActual      int32   `json:"stock_actual"`
-		UnidadMedida     string  `json:"unidad_medida"`
-		LeadTimeDias     int32   `json:"lead_time_dias"`
-		Especificaciones string  `json:"especificaciones"`
-		Categoria        string  `json:"categoria"`
-		Subgrupo         string  `json:"subgrupo"`
-		Modelo           string  `json:"modelo"`
-		Tipo             string  `json:"tipo"`
-		Marca            string  `json:"marca"`
-		Multiplos        int32   `json:"multiplos"`
+		Sku               string `json:"sku" binding:"required"`
+		Medida            string `json:"medida"`
+		PrecioPuntos      int32  `json:"precio_puntos" binding:"required"`
+		StockActual       int32  `json:"stock_actual"`
+		UnidadMedida      string `json:"unidad_medida"`
+		LeadTimeDias      int32  `json:"lead_time_dias"`
+		Especificaciones  string `json:"especificaciones"`
+		Categoria         string `json:"categoria"`
+		Subgrupo          string `json:"subgrupo"`
+		Modelo            string `json:"modelo"`
+		Tipo              string `json:"tipo"`
+		Marca             string `json:"marca"`
+		Multiplos         int32  `json:"multiplos"`
 		PermitirBackorder bool   `json:"permitir_backorder"`
-		CreatedBy        int32   `json:"created_by"`
+		CreatedBy         int32  `json:"created_by"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})

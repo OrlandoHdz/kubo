@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/OrlandoHdz/kubo/internal/api/handlers"
 	"github.com/OrlandoHdz/kubo/internal/auth"
+	"github.com/OrlandoHdz/kubo/internal/chat"
 	"github.com/OrlandoHdz/kubo/internal/db"
 	"github.com/OrlandoHdz/kubo/pkg/email"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
@@ -10,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg *utils.ConfigOSS, emailCfg *email.Config) {
+func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg *utils.ConfigOSS, emailCfg *email.Config, chatHandler *chat.Handler) {
 	userHandler := handlers.NewUsuarioHandler(queries)
 	authHandler := handlers.NewAuthHandler(queries)
 	permisoHandler := handlers.NewPermisoHandler(queries)
@@ -24,6 +25,14 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	// Servir archivos subidos estáticamente (ej. para que la URL /uploads/... devuelva el PDF)
 	r.Static("/uploads", "./uploads")
 
+	// Chat inteligente. La autenticación es opcional a nivel de ruta: el handler
+	// permite invitados para catálogo y exige sesión para las herramientas de pedidos.
+	// Se registra fuera del grupo protegido para no bloquear a los invitados.
+	if chatHandler != nil {
+		r.POST("/api/chat", chatHandler.Chat)
+		r.POST("/api/v1/chat", chatHandler.Chat)
+	}
+
 	clientesHandler := handlers.NewClientesHandler(queries)
 	productosHandler := handlers.NewProductosHandler(queries, ossCfg)
 	productosRecompensaHandler := handlers.NewProductosRecompensaHandler(queries, ossCfg)
@@ -36,6 +45,7 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	estadoCuentaHandler := handlers.NewEstadoCuentaHandler(queries)
 	dashboardClienteHandler := handlers.NewDashboardClienteHandler(queries)
 	adminDashboardHandler := handlers.NewAdminDashboardHandler(queries)
+	chatAdminHandler := handlers.NewChatAdminHandler(queries)
 	recompensasHandler := handlers.NewRecompensasHandlerWithPoolAndEmail(queries, pool, emailCfg)
 	ajustesInventarioHandler := handlers.NewAjustesInventarioHandler(queries, pool)
 
@@ -243,6 +253,14 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 
 		// Dashboard del Administrador
 		v1.GET("/admin/dashboard", adminDashboardHandler.ObtenerDashboard)
+
+		// Bandeja de escalamientos del chat (solo rol Admin)
+		adminChat := v1.Group("/admin/chat")
+		{
+			adminChat.GET("/escalations", chatAdminHandler.Listar)
+			adminChat.GET("/escalations/:id", chatAdminHandler.Obtener)
+			adminChat.PATCH("/escalations/:id/estado", chatAdminHandler.ActualizarEstado)
+		}
 
 		// Clientes (Sistema Local)
 		clientes := v1.Group("/clientes")

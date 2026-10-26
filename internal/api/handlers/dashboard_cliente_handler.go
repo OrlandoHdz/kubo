@@ -19,16 +19,16 @@ func NewDashboardClienteHandler(q *db.Queries) *DashboardClienteHandler {
 
 type DashboardClienteResponse struct {
 	// Financiero
-	DiasCredito        int32   `json:"dias_credito"`
-	LimiteCredito      float64 `json:"limite_credito"`
+	DiasCredito         int32   `json:"dias_credito"`
+	LimiteCredito       float64 `json:"limite_credito"`
 	SaldoPendienteTotal float64 `json:"saldo_pendiente_total"`
-	SaldoVencido       float64 `json:"saldo_vencido"`
-	CreditoDisponible  float64 `json:"credito_disponible"`
-	PorcentajeUsado    float64 `json:"porcentaje_usado"`
+	SaldoVencido        float64 `json:"saldo_vencido"`
+	CreditoDisponible   float64 `json:"credito_disponible"`
+	PorcentajeUsado     float64 `json:"porcentaje_usado"`
 
 	// Operativo
-	PedidosActivos       int64 `json:"pedidos_activos"`
-	BackordersActivos    int64 `json:"backorders_activos"`
+	PedidosActivos        int64 `json:"pedidos_activos"`
+	BackordersActivos     int64 `json:"backorders_activos"`
 	DevolucionesEnProceso int64 `json:"devoluciones_en_proceso"`
 }
 
@@ -105,14 +105,14 @@ func (h *DashboardClienteHandler) ObtenerDashboard(c *gin.Context) {
 	}
 
 	resp := DashboardClienteResponse{
-		DiasCredito:          diasCredito,
-		LimiteCredito:        limiteCredito,
-		SaldoPendienteTotal:  saldoPendienteTotal,
-		SaldoVencido:         saldoVencido,
-		CreditoDisponible:    creditoDisponible,
-		PorcentajeUsado:      porcentajeUsado,
-		PedidosActivos:       pedidosActivos,
-		BackordersActivos:    backordersActivos,
+		DiasCredito:           diasCredito,
+		LimiteCredito:         limiteCredito,
+		SaldoPendienteTotal:   saldoPendienteTotal,
+		SaldoVencido:          saldoVencido,
+		CreditoDisponible:     creditoDisponible,
+		PorcentajeUsado:       porcentajeUsado,
+		PedidosActivos:        pedidosActivos,
+		BackordersActivos:     backordersActivos,
 		DevolucionesEnProceso: devolucionesEnProceso,
 	}
 

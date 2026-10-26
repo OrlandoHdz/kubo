@@ -37,14 +37,14 @@ type FacturaItem struct {
 }
 
 type EstadoCuentaResponse struct {
-	CveCte         int32         `json:"cve_cte"`
-	Cliente        string        `json:"cliente"`
-	DiasCredito    int32         `json:"dias_credito"`
-	LimiteCredito  float64       `json:"limite_credito"`
-	Facturas       []FacturaItem `json:"facturas"`
-	TotalFacturas  int           `json:"total_facturas"`
-	SaldoTotal     float64       `json:"saldo_total"`
-	MontoTotal     float64       `json:"monto_total"`
+	CveCte        int32         `json:"cve_cte"`
+	Cliente       string        `json:"cliente"`
+	DiasCredito   int32         `json:"dias_credito"`
+	LimiteCredito float64       `json:"limite_credito"`
+	Facturas      []FacturaItem `json:"facturas"`
+	TotalFacturas int           `json:"total_facturas"`
+	SaldoTotal    float64       `json:"saldo_total"`
+	MontoTotal    float64       `json:"monto_total"`
 }
 
 func (h *EstadoCuentaHandler) ObtenerEstadoCuenta(c *gin.Context) {
@@ -66,10 +66,10 @@ func (h *EstadoCuentaHandler) ObtenerEstadoCuenta(c *gin.Context) {
 
 	if len(rows) == 0 {
 		c.JSON(http.StatusOK, gin.H{
-			"usuario_id":     usuarioID,
-			"cliente_id":     clienteID,
-			"cve_cte":        cveCte.Int32,
-			"mensaje":        "No se encontraron facturas para este cliente",
+			"usuario_id": usuarioID,
+			"cliente_id": clienteID,
+			"cve_cte":    cveCte.Int32,
+			"mensaje":    "No se encontraron facturas para este cliente",
 		})
 		return
 	}

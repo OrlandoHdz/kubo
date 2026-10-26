@@ -116,14 +116,14 @@ func (h *DevolucionesHandler) notificarDevolucionCreada(ctx context.Context, dev
 	}
 
 	dvData := email.DevolucionData{
-		Folio:       dv.Folio,
-		Tipo:        dv.Tipo,
-		PedidoFolio: dv.PedidoFolio,
-		NumerosParte:  dv.NumerosParte,
-		Cantidades:    dv.Cantidades,
-		NotaCliente:   dv.NotaCliente,
-		Estatus:       dv.Estatus,
-		ClienteName:   cliente.NombreComercial,
+		Folio:        dv.Folio,
+		Tipo:         dv.Tipo,
+		PedidoFolio:  dv.PedidoFolio,
+		NumerosParte: dv.NumerosParte,
+		Cantidades:   dv.Cantidades,
+		NotaCliente:  dv.NotaCliente,
+		Estatus:      dv.Estatus,
+		ClienteName:  cliente.NombreComercial,
 	}
 
 	h.emailCfg.SendDevolucionNotification(dvData, usuarios[0].Email)

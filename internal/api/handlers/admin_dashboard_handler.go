@@ -26,7 +26,7 @@ type AdminDashboardResponse struct {
 	} `json:"inventario"`
 
 	Pedidos struct {
-		TotalPedidos     int64   `json:"total_pedidos"`
+		TotalPedidos      int64   `json:"total_pedidos"`
 		MontoTotalOrdenes float64 `json:"monto_total_ordenes"`
 	} `json:"pedidos"`
 
