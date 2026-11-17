@@ -413,8 +413,6 @@ func (p *pgRecompensasQuerier) ObtenerRecompensasCliente(ctx context.Context, cl
 
 	out := &RecompensasCliente{
 		SaldoPuntos:             row.SaldoPuntos,
-		ValorPuntoPesos:         row.ValorPuntoPesos,
-		EquivalenciaPesos:       float64(row.SaldoPuntos) * row.ValorPuntoPesos,
 		MontoCompraPorPunto:     row.MontoCompraPorPunto,
 		Compra90Dias:            row.Compra90dias,
 		PromedioTrimestral:      row.PromedioTrimestral,
@@ -471,14 +469,13 @@ func (s *pgReadStore) ListarNivelesRecompensa(ctx context.Context) (NivelesRecom
 	}
 	params, err := s.q.ObtenerParametrosRecompensa(ctx)
 	if errors.Is(err, pgx.ErrNoRows) {
-		params = chatdb.ChatParametrosRecompensa{}
+		params = 0
 	} else if err != nil {
 		return NivelesRecompensaResult{}, err
 	}
 	return NivelesRecompensaResult{
 		Niveles:             mapNiveles(levels),
-		MontoCompraPorPunto: params.MontoCompraPorPunto,
-		ValorPuntoPesos:     params.ValorPuntoPesos,
+		MontoCompraPorPunto: params,
 	}, nil
 }
 

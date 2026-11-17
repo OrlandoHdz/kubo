@@ -57,6 +57,12 @@ FROM productos_padre p
 LEFT JOIN productos_integracion pi ON p.cve_prod_integracion = pi.cve_prod
 WHERE p.descripcion = $1 AND p.deleted_at IS NULL LIMIT 1;
 
+-- name: GetProductoPadreByCveProd :one
+-- Búsqueda idempotente del contenedor durante la importación de catálogo.
+SELECT * FROM productos_padre
+WHERE cve_prod_integracion = $1 AND deleted_at IS NULL
+LIMIT 1;
+
 -- name: ListarProductosPadre :many
 SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico

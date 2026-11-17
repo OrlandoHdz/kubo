@@ -3,6 +3,7 @@ MAIN_PACKAGE=cmd/api/main.go
 SEED_PACKAGE=cmd/seed/main.go
 DB_TEST_PACKAGE=cmd/setup_db/main.go
 WORKER_PACKAGE=cmd/worker/main.go
+IMPORT_CATALOGO_PACKAGE=cmd/import_catalogo/main.go
 
 # DBF paths (ajusta si es necesario)
 CLIENTES_DBF=$(HOME)/Proyectos/Orlando/KUBO/BaseDatos_SAI/CLIENTES/CLIENTES.DBF
@@ -30,6 +31,7 @@ build:
 	go build -o bin/seed ./cmd/seed
 	go build -o bin/setup_db ./cmd/setup_db
 	go build -o bin/worker ./cmd/worker
+	go build -o bin/import_catalogo ./cmd/import_catalogo
 
 ## run: Ejecuta la aplicación principal (API)
 run:
@@ -75,3 +77,9 @@ sync-creditos:
 sync-productos:
 	@echo "${YELLOW}Sincronizando productos desde SAI ERP...${NC}"
 	go run $(WORKER_PACKAGE) -productos $(PRODUCTOS_DBF)
+
+## import-catalogo: Importar catálogo desde un Excel (requiere ARCHIVO=...)
+import-catalogo:
+	@if [ -z "$(ARCHIVO)" ]; then echo "Uso: make import-catalogo ARCHIVO=/ruta/catalogo.xlsx"; exit 1; fi
+	@echo "${YELLOW}Importando catálogo desde Excel...${NC}"
+	go run $(IMPORT_CATALOGO_PACKAGE) -archivo "$(ARCHIVO)"

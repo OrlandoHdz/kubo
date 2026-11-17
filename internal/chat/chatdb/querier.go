@@ -33,11 +33,11 @@ type Querier interface {
 	ObtenerContextoCliente(ctx context.Context, usuarioID int32) (ChatUsuariosCliente, error)
 	// Consultas de devoluciones y garantías para el chat. Solo lectura.
 	ObtenerDevolucionCliente(ctx context.Context, arg ObtenerDevolucionClienteParams) (ObtenerDevolucionClienteRow, error)
-	ObtenerParametrosRecompensa(ctx context.Context) (ChatParametrosRecompensa, error)
+	ObtenerParametrosRecompensa(ctx context.Context) (float64, error)
 	ObtenerPedidoCliente(ctx context.Context, arg ObtenerPedidoClienteParams) (ObtenerPedidoClienteRow, error)
 	ObtenerProductoPorSKU(ctx context.Context, arg ObtenerProductoPorSKUParams) (ObtenerProductoPorSKURow, error)
 	// Consultas de recompensas y niveles para el chat. Solo lectura.
-	ObtenerRecompensasCliente(ctx context.Context, clienteID int32) (ChatRecompensasCliente, error)
+	ObtenerRecompensasCliente(ctx context.Context, clienteID int32) (ObtenerRecompensasClienteRow, error)
 	SetCustomerContext(ctx context.Context, customerID string) error
 }
 

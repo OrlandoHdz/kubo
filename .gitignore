@@ -29,6 +29,12 @@ go.work.sum
 
 # env file
 .env
+.env.migrations
+kubo.env
+
+# Respaldos de migraciones
+backups/
+*.dump
 
 # Editor/IDE
 # .idea/

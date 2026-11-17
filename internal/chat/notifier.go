@@ -48,7 +48,7 @@ func newEmailEscalationNotifier(cfg *email.Config) EscalationNotifier {
 	return &emailEscalationNotifier{
 		cfg:        cfg,
 		recipients: recipients,
-		panelURL:   envDefault("CHAT_ADMIN_PANEL_URL", "http://localhost:9000/app/dashboard"),
+		panelURL:   envDefault("CHAT_ADMIN_PANEL_URL", "http://localhost:9000/#/app/dashboard"),
 	}
 }
 
@@ -69,7 +69,7 @@ func (n *emailEscalationNotifier) Notificar(data EscalationNotification) {
 	}
 	// No bloquea la respuesta del chat si el SMTP tarda.
 	go func() {
-		subject := "Nueva solicitud de asesor humano - Kubo"
+		subject := "Nueva solicitud de asesor humano - Arsenal Welds"
 		body := buildEscalationEmail(data, n.panelURL)
 		if err := n.cfg.SendToMultiple(n.recipients, subject, body); err != nil {
 			log.Printf(
@@ -101,7 +101,7 @@ func buildEscalationEmail(data EscalationNotification, panelURL string) string {
 	return fmt.Sprintf(`
 		<div style="font-family:Arial,sans-serif;color:#222;line-height:1.45;">
 			<h2 style="color:#491212;margin:0 0 12px;">Nueva solicitud de asesor humano</h2>
-			<p>Un cliente solicitó atención humana desde el chat de Kubo.</p>
+			<p>Un cliente solicitó atención humana desde el chat de Kubo, el asesor virtual de Arsenal Welds.</p>
 			<table style="border-collapse:collapse;width:100%%;max-width:680px;">
 				<tr><td style="padding:6px;border:1px solid #ddd;"><strong>Conversación</strong></td><td style="padding:6px;border:1px solid #ddd;">%s</td></tr>
 				<tr><td style="padding:6px;border:1px solid #ddd;"><strong>Cliente ID</strong></td><td style="padding:6px;border:1px solid #ddd;">%s</td></tr>

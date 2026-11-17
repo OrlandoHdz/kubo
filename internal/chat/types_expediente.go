@@ -49,8 +49,6 @@ type TransaccionPuntos struct {
 
 type RecompensasCliente struct {
 	SaldoPuntos             int32               `json:"saldo_puntos"`
-	ValorPuntoPesos         float64             `json:"valor_punto_pesos"`
-	EquivalenciaPesos       float64             `json:"equivalencia_pesos"`
 	MontoCompraPorPunto     float64             `json:"monto_compra_por_punto"`
 	Compra90Dias            float64             `json:"compra_90dias"`
 	PromedioTrimestral      float64             `json:"promedio_trimestral"`
@@ -66,5 +64,4 @@ type RecompensasCliente struct {
 type NivelesRecompensaResult struct {
 	Niveles             []NivelRecompensa `json:"niveles"`
 	MontoCompraPorPunto float64           `json:"monto_compra_por_punto"`
-	ValorPuntoPesos     float64           `json:"valor_punto_pesos"`
 }

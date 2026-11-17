@@ -5,6 +5,7 @@ import (
 	"github.com/OrlandoHdz/kubo/internal/auth"
 	"github.com/OrlandoHdz/kubo/internal/chat"
 	"github.com/OrlandoHdz/kubo/internal/db"
+	"github.com/OrlandoHdz/kubo/internal/services"
 	"github.com/OrlandoHdz/kubo/pkg/email"
 	"github.com/OrlandoHdz/kubo/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,8 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 	existenciasIntegracionHandler := handlers.NewExistenciasIntegracionHandler(queries)
 	creditosIntegracionHandler := handlers.NewCreditosIntegracionHandler(queries)
 	productosIntegracionHandler := handlers.NewProductosIntegracionHandler(queries)
+	catalogoImportService := services.NewCatalogoExcelService(queries, pool)
+	catalogoImportHandler := handlers.NewCatalogoImportHandler(catalogoImportService)
 
 	// Servir archivos subidos estáticamente (ej. para que la URL /uploads/... devuelva el PDF)
 	r.Static("/uploads", "./uploads")
@@ -143,6 +146,12 @@ func SetupRoutes(r *gin.Engine, queries *db.Queries, pool *pgxpool.Pool, ossCfg 
 			productosIntegracion.GET("/:id", productosIntegracionHandler.Obtener)
 			productosIntegracion.POST("/", productosIntegracionHandler.Crear)
 		}
+		// Importación de catálogo desde Excel (Privado - Gestión)
+		catalogo := v1.Group("/catalogo")
+		{
+			catalogo.POST("/importar-excel", catalogoImportHandler.ImportarExcel)
+		}
+
 		// Productos (Privados - Gestión)
 		productos := v1.Group("/productos")
 		{

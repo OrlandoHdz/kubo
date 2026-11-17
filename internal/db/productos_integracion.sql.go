@@ -97,6 +97,33 @@ func (q *Queries) GetProductoByClave(ctx context.Context, cveProd pgtype.Text) (
 	return i, err
 }
 
+const getProductoByClaveCaseInsensitive = `-- name: GetProductoByClaveCaseInsensitive :one
+SELECT id, cse_prod, cve_prod, nom_prod, desc_prod, uni_med, uni_med_p, costo_prod, f_act_cto, f_act_pre, cto_ent, fec_ent, fec_ant FROM productos_integracion
+WHERE lower(cve_prod) = lower($1) LIMIT 1
+`
+
+// Tolerancia a diferencias de mayúsculas/minúsculas en archivos externos (ej. AR54a vs AR54A).
+func (q *Queries) GetProductoByClaveCaseInsensitive(ctx context.Context, lower string) (ProductosIntegracion, error) {
+	row := q.db.QueryRow(ctx, getProductoByClaveCaseInsensitive, lower)
+	var i ProductosIntegracion
+	err := row.Scan(
+		&i.ID,
+		&i.CseProd,
+		&i.CveProd,
+		&i.NomProd,
+		&i.DescProd,
+		&i.UniMed,
+		&i.UniMedP,
+		&i.CostoProd,
+		&i.FActCto,
+		&i.FActPre,
+		&i.CtoEnt,
+		&i.FecEnt,
+		&i.FecAnt,
+	)
+	return i, err
+}
+
 const getProductoByID = `-- name: GetProductoByID :one
 SELECT id, cse_prod, cve_prod, nom_prod, desc_prod, uni_med, uni_med_p, costo_prod, f_act_cto, f_act_pre, cto_ent, fec_ent, fec_ant FROM productos_integracion
 WHERE id = $1 LIMIT 1

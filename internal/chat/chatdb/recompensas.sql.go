@@ -7,6 +7,8 @@ package chatdb
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const listarNivelesRecompensa = `-- name: ListarNivelesRecompensa :many
@@ -97,17 +99,16 @@ func (q *Queries) ListarTransaccionesPuntos(ctx context.Context, arg ListarTrans
 
 const obtenerParametrosRecompensa = `-- name: ObtenerParametrosRecompensa :one
 SELECT
-    monto_compra_por_punto,
-    valor_punto_pesos
+    monto_compra_por_punto
 FROM chat_parametros_recompensa
 LIMIT 1
 `
 
-func (q *Queries) ObtenerParametrosRecompensa(ctx context.Context) (ChatParametrosRecompensa, error) {
+func (q *Queries) ObtenerParametrosRecompensa(ctx context.Context) (float64, error) {
 	row := q.db.QueryRow(ctx, obtenerParametrosRecompensa)
-	var i ChatParametrosRecompensa
-	err := row.Scan(&i.MontoCompraPorPunto, &i.ValorPuntoPesos)
-	return i, err
+	var monto_compra_por_punto float64
+	err := row.Scan(&monto_compra_por_punto)
+	return monto_compra_por_punto, err
 }
 
 const obtenerRecompensasCliente = `-- name: ObtenerRecompensasCliente :one
@@ -124,17 +125,31 @@ SELECT
     nivel_descuento,
     compra_90dias,
     promedio_trimestral,
-    monto_compra_por_punto,
-    valor_punto_pesos
+    monto_compra_por_punto
 FROM chat_recompensas_cliente
 WHERE cliente_id = $1::int
 LIMIT 1
 `
 
+type ObtenerRecompensasClienteRow struct {
+	ClienteID               int32       `json:"cliente_id"`
+	SaldoPuntos             int32       `json:"saldo_puntos"`
+	NivelManualFijado       bool        `json:"nivel_manual_fijado"`
+	FechaActualizacionNivel string      `json:"fecha_actualizacion_nivel"`
+	NivelID                 pgtype.Int4 `json:"nivel_id"`
+	NivelNombre             string      `json:"nivel_nombre"`
+	NivelNumero             int32       `json:"nivel_numero"`
+	NivelPromedioTrimestral float64     `json:"nivel_promedio_trimestral"`
+	NivelDescuento          float64     `json:"nivel_descuento"`
+	Compra90dias            float64     `json:"compra_90dias"`
+	PromedioTrimestral      float64     `json:"promedio_trimestral"`
+	MontoCompraPorPunto     float64     `json:"monto_compra_por_punto"`
+}
+
 // Consultas de recompensas y niveles para el chat. Solo lectura.
-func (q *Queries) ObtenerRecompensasCliente(ctx context.Context, clienteID int32) (ChatRecompensasCliente, error) {
+func (q *Queries) ObtenerRecompensasCliente(ctx context.Context, clienteID int32) (ObtenerRecompensasClienteRow, error) {
 	row := q.db.QueryRow(ctx, obtenerRecompensasCliente, clienteID)
-	var i ChatRecompensasCliente
+	var i ObtenerRecompensasClienteRow
 	err := row.Scan(
 		&i.ClienteID,
 		&i.SaldoPuntos,
@@ -148,7 +163,6 @@ func (q *Queries) ObtenerRecompensasCliente(ctx context.Context, clienteID int32
 		&i.Compra90dias,
 		&i.PromedioTrimestral,
 		&i.MontoCompraPorPunto,
-		&i.ValorPuntoPesos,
 	)
 	return i, err
 }

@@ -16,6 +16,11 @@ WHERE id = $1 LIMIT 1;
 SELECT * FROM productos_integracion
 WHERE cve_prod = $1 LIMIT 1;
 
+-- name: GetProductoByClaveCaseInsensitive :one
+-- Tolerancia a diferencias de mayúsculas/minúsculas en archivos externos (ej. AR54a vs AR54A).
+SELECT * FROM productos_integracion
+WHERE lower(cve_prod) = lower($1) LIMIT 1;
+
 -- name: ListProductos :many
 SELECT * FROM productos_integracion
 ORDER BY nom_prod ASC;

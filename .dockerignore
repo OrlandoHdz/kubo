@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.env.*
+kubo.env
+kubo.env.example
+backups/
+uploads/
+*.tar
+*.dump
+deploy-*.sh
+.DS_Store
+.idea/
+.vscode/

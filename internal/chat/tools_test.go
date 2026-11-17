@@ -787,7 +787,7 @@ func TestConsultarRecompensas(t *testing.T) {
 	}
 	store := &mockRecompensasStore{
 		info: &RecompensasCliente{
-			SaldoPuntos: 1200, ValorPuntoPesos: 0.4, MontoCompraPorPunto: 25,
+			SaldoPuntos: 1200, MontoCompraPorPunto: 25,
 			Compra90Dias: 15000, PromedioTrimestral: 5000,
 			NivelActual: &NivelRecompensa{Nombre: "Plata", NumeroNivel: 2, PromedioCompraTrimestral: 4000, PorcentajeDescuento: 5},
 		},
@@ -807,7 +807,7 @@ func TestConsultarRecompensas(t *testing.T) {
 		t.Fatalf("store called=%v cliente=%d txCliente=%d txLimite=%d", store.called, store.clienteID, store.lastTxCliente, store.lastTxLimite)
 	}
 	recompensas := out.Content.(map[string]any)["recompensas"].(*RecompensasCliente)
-	if recompensas.SaldoPuntos != 1200 || recompensas.EquivalenciaPesos != 480 {
+	if recompensas.SaldoPuntos != 1200 || recompensas.MontoCompraPorPunto != 25 {
 		t.Fatalf("recompensas = %+v", recompensas)
 	}
 	if recompensas.SiguienteNivel == nil || recompensas.SiguienteNivel.Nombre != "Oro" {
@@ -818,6 +818,13 @@ func TestConsultarRecompensas(t *testing.T) {
 	}
 	if len(recompensas.Niveles) != 3 || len(recompensas.UltimasTransacciones) != 1 {
 		t.Fatalf("niveles=%d tx=%d", len(recompensas.Niveles), len(recompensas.UltimasTransacciones))
+	}
+	encoded, err := json.Marshal(out.Content)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(encoded), "valor_punto_pesos") || strings.Contains(string(encoded), "equivalencia_pesos") {
+		t.Fatalf("la herramienta no debe exponer el valor monetario de los puntos: %s", encoded)
 	}
 }
 
@@ -841,7 +848,6 @@ func TestListarNivelesRecompensaPublic(t *testing.T) {
 		publicResult: NivelesRecompensaResult{
 			Niveles:             []NivelRecompensa{{Nombre: "Nivel 0", NumeroNivel: 0}, {Nombre: "Oro", NumeroNivel: 3, PromedioCompraTrimestral: 6000, PorcentajeDescuento: 8}},
 			MontoCompraPorPunto: 25,
-			ValorPuntoPesos:     0.4,
 		},
 	}
 	registry := NewToolRegistry(ToolDeps{Recompensas: store})
@@ -856,6 +862,16 @@ func TestListarNivelesRecompensaPublic(t *testing.T) {
 	content := out.Content.(map[string]any)
 	if content["total"] != 2 || content["monto_compra_por_punto"] != 25.0 {
 		t.Fatalf("contenido = %+v", content)
+	}
+	if _, exists := content["valor_punto_pesos"]; exists {
+		t.Fatalf("la herramienta no debe exponer valor_punto_pesos: %+v", content)
+	}
+	encoded, err := json.Marshal(content)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(encoded), "valor_punto_pesos") || strings.Contains(string(encoded), "equivalencia_pesos") {
+		t.Fatalf("la herramienta no debe exponer el valor monetario de los puntos: %s", encoded)
 	}
 }
 

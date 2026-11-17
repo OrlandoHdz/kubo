@@ -913,7 +913,6 @@ func consultarRecompensasHandler(store RecompensasStore) func(context.Context, j
 
 		info.Niveles = niveles
 		info.UltimasTransacciones = transacciones
-		info.EquivalenciaPesos = float64(info.SaldoPuntos) * info.ValorPuntoPesos
 		info.SiguienteNivel = siguienteNivel(info.NivelActual, niveles)
 		if info.SiguienteNivel != nil {
 			faltante := info.SiguienteNivel.PromedioCompraTrimestral - info.PromedioTrimestral
@@ -941,7 +940,6 @@ func listarNivelesRecompensaHandler(store RecompensasStore) func(context.Context
 				"niveles":                result.Niveles,
 				"total":                  len(result.Niveles),
 				"monto_compra_por_punto": result.MontoCompraPorPunto,
-				"valor_punto_pesos":      result.ValorPuntoPesos,
 			},
 		}, nil
 	}

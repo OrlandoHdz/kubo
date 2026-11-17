@@ -13,8 +13,7 @@ SELECT
     nivel_descuento,
     compra_90dias,
     promedio_trimestral,
-    monto_compra_por_punto,
-    valor_punto_pesos
+    monto_compra_por_punto
 FROM chat_recompensas_cliente
 WHERE cliente_id = sqlc.arg(cliente_id)::int
 LIMIT 1;
@@ -31,8 +30,7 @@ ORDER BY numero_nivel ASC;
 
 -- name: ObtenerParametrosRecompensa :one
 SELECT
-    monto_compra_por_punto,
-    valor_punto_pesos
+    monto_compra_por_punto
 FROM chat_parametros_recompensa
 LIMIT 1;
 

@@ -1,4 +1,4 @@
-# Chat inteligente de Kubo
+# Chat inteligente de Arsenal Welds (Kubo)
 
 Asesor virtual basado en Claude con tool use. El navegador habla por SSE con
 Go; Go consulta PostgreSQL con sqlc usando un rol de solo lectura.
@@ -25,6 +25,20 @@ Quasar
   `set_config('app.customer_id', ..., true)`. La migración 37 agrega RLS
   opcional como defensa adicional.
 
+## Alcance del asesor
+
+El asesor se llama Kubo y representa a Arsenal Welds. Solo responde temas de la
+tienda y de soldadura (catálogo, orientación técnica, pedidos, backorders,
+devoluciones, recompensas, envíos y políticas de la tienda). Cualquier otro tema
+se rechaza con una respuesta breve y una invitación a consultar algo dentro del
+alcance. Las reglas viven en
+`internal/chat/prompts.go` (`SystemPrompt`) y los casos de regresión en
+`evals/preguntas.yaml`, categoría `fuera_de_alcance`.
+
+Si se necesita un límite más estricto que el prompt, el siguiente paso es un
+filtro determinista en `Handler.Chat` antes de llamar al agente; el prompt por
+sí solo no garantiza el 100% de los casos.
+
 ## Herramientas
 
 | Herramienta | Sesión | Contenido |
@@ -44,6 +58,10 @@ Quasar
 Las herramientas marcadas con “Sí” obtienen el `cliente_id` de la sesión JWT,
 nunca de los argumentos del modelo. Las vistas de backorders y devoluciones no
 exponen notas administrativas, evidencias ni datos de pago.
+
+Las herramientas de recompensas no exponen el valor monetario de un punto ni
+la equivalencia del saldo en pesos. Solo devuelven saldo, nivel, promedio,
+movimientos y el monto de compra necesario para acumular puntos.
 
 ## Escalamiento a humano
 
@@ -80,7 +98,7 @@ variables ya exportadas.
 | `CHAT_DB_URL` | Para herramientas | — | Rol `chat_ro` |
 | `CHAT_AUDIT_DB_URL` | Para auditoría | — | Rol `chat_audit` |
 | `CHAT_ESCALATION_EMAILS` | No | `default_recipients` de `email.yaml` | Correos separados por coma |
-| `CHAT_ADMIN_PANEL_URL` | No | `http://localhost:9000/app/dashboard` | Enlace en el correo |
+| `CHAT_ADMIN_PANEL_URL` | No | `http://localhost:9000/#/app/dashboard` | Enlace en el correo |
 | `CHAT_MAX_TOKENS` | No | `2048` | Tokens máximos por respuesta |
 | `CHAT_RATE_LIMIT` | No | `20` | Solicitudes/minuto por usuario o IP |
 | `CHAT_MAX_MESSAGE_CHARS` | No | `2000` | Límite del mensaje actual |
@@ -93,7 +111,25 @@ Sin `CHAT_DB_URL` el chat funciona en modo texto, pero sin herramientas de
 catálogo, pedidos, backorders, devoluciones ni recompensas. Sin
 `CHAT_AUDIT_DB_URL` no se guarda auditoría ni se registra el escalamiento.
 
+### Producción
+
+El contenedor recibe las variables con `--env-file` desde
+`/home/ecs-user/kubo.env`; la plantilla es `kubo.env.example`. El archivo real
+no se sube al repositorio. `deploy-backend.sh` valida que exista y que tenga
+las variables obligatorias antes de construir la imagen.
+
+```bash
+cp kubo.env.example kubo.env
+# editar kubo.env
+scp -i "/ruta/a/la/llave.pem" kubo.env ecs-user@TU_SERVIDOR:/home/ecs-user/kubo.env
+ssh -i "/ruta/a/la/llave.pem" ecs-user@TU_SERVIDOR "chmod 600 /home/ecs-user/kubo.env"
+```
+
 ## Migraciones
+
+En producción, el repo incluye `deploy-db-migrations.sh`, que aplica las
+migraciones con tracking en `schema_migrations` y respaldo previo. Consulta
+`./deploy-db-migrations.sh --help` antes de usarlo.
 
 Aplicar en desarrollo en este orden, con un rol que pueda crear roles y ceder
 propiedad de vistas (idealmente un superusuario o el dueño de la base):

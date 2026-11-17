@@ -482,6 +482,41 @@ func (q *Queries) GetProductoPadre(ctx context.Context, id int32) (GetProductoPa
 	return i, err
 }
 
+const getProductoPadreByCveProd = `-- name: GetProductoPadreByCveProd :one
+SELECT id, cve_prod_integracion, titulo, descripcion, foto_url, ficha_tecnica, descripcion_extendida, foto_url2, foto_url_3, foto_url_4, foto_url_5, foto_url_6, foto_url_7, foto_url_8, created_at, updated_at, deleted_at, created_by, updated_by, deleted_by FROM productos_padre
+WHERE cve_prod_integracion = $1 AND deleted_at IS NULL
+LIMIT 1
+`
+
+// Búsqueda idempotente del contenedor durante la importación de catálogo.
+func (q *Queries) GetProductoPadreByCveProd(ctx context.Context, cveProdIntegracion pgtype.Text) (ProductosPadre, error) {
+	row := q.db.QueryRow(ctx, getProductoPadreByCveProd, cveProdIntegracion)
+	var i ProductosPadre
+	err := row.Scan(
+		&i.ID,
+		&i.CveProdIntegracion,
+		&i.Titulo,
+		&i.Descripcion,
+		&i.FotoUrl,
+		&i.FichaTecnica,
+		&i.DescripcionExtendida,
+		&i.FotoUrl2,
+		&i.FotoUrl3,
+		&i.FotoUrl4,
+		&i.FotoUrl5,
+		&i.FotoUrl6,
+		&i.FotoUrl7,
+		&i.FotoUrl8,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.CreatedBy,
+		&i.UpdatedBy,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const getProductoPadreByDescripcion = `-- name: GetProductoPadreByDescripcion :one
 SELECT p.id, p.cve_prod_integracion, p.titulo, p.descripcion, p.descripcion_extendida, p.foto_url, p.foto_url2, p.foto_url_3, p.foto_url_4, p.foto_url_5, p.foto_url_6, p.foto_url_7, p.foto_url_8, p.ficha_tecnica, p.created_at, p.updated_at, p.deleted_at, p.created_by, p.updated_by, p.deleted_by, 
        COALESCE(pi.nom_prod, '') AS nombre_tecnico
